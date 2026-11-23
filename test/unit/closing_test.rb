@@ -36,11 +36,13 @@ class ClosingTest < ActiveSupport::TestCase
 
     closed = RedmineTeamPlanning::Closing.new(@planner).call(
       decisions: { to_next.id.to_s => 'next', to_backlog.id.to_s => 'backlog', to_close.id.to_s => 'close' },
-      review: { good: 'Gewinnspiel lief', bad: 'Video fehlt', change: '' }, focus: 'Advent fertig'
+      review: { good: 'Gewinnspiel lief', bad: 'Video fehlt', change: '' }, focus: 'Advent fertig',
+      notes: "Agentur wegen Videos anrufen\n- Rechnung prüfen"
     )
 
     assert closed.closed?
     assert_equal 'Gewinnspiel lief', closed.review_good
+    assert_equal "Agentur wegen Videos anrufen\n- Rechnung prüfen", closed.notes
     results = closed.items.to_h { |item| [item.issue_id, item.result] }
     assert_equal({ to_next.id => 'carried', to_backlog.id => 'backlog', to_close.id => 'closed', done.id => 'done',
                    long.id => 'carried' }, results)

@@ -64,6 +64,16 @@
       <% end %>
     </section>
 
+    <section class="tp-panel tp-personal-notes">
+      <div class="tp-panel-head"><h3><label for="period_notes"><%= l(:label_team_planning_personal_notes) %></label></h3><span class="tp-hint"><%= l(:text_team_planning_personal_notes_hint) %></span></div>
+      <% if @editing %>
+        <%= text_area_tag 'period[notes]', period.notes, id: 'period_notes', rows: 6, class: 'tp-wide-field wiki-edit', placeholder: l(:text_team_planning_personal_notes_placeholder) %>
+        <%= wikitoolbar_for 'period_notes' %>
+      <% else %>
+        <%= team_planning_text(period.notes) %>
+      <% end %>
+    </section>
+
     <section class="tp-panel">
       <h3><%= l(:label_team_planning_round_notes) %></h3>
       <% rounds = @planner.round_notes(period) %>
@@ -71,9 +81,10 @@
         <div class="tp-round-note">
           <h4><label for="round_<%= round.id %>"><%= l(:label_team_planning_round_on, day: day_name(round.held_on.wday), date: format_date(round.held_on)) %></label></h4>
           <% if @editing %>
-            <%= text_area_tag "rounds[#{round.id}]", round.notes, id: "round_#{round.id}", rows: 4, class: 'tp-wide-field' %>
+            <%= text_area_tag "rounds[#{round.id}]", round.notes, id: "round_#{round.id}", rows: 5, class: 'tp-wide-field wiki-edit' %>
+            <%= wikitoolbar_for "round_#{round.id}" %>
           <% else %>
-            <%= simple_format(h(round.notes)) %>
+            <%= team_planning_text(round.notes) %>
           <% end %>
         </div>
       <% end %>
@@ -89,7 +100,7 @@
       <% if @editing %>
         <div><h4><label for="period_<%= field %>"><%= l(label) %></label></h4><%= text_area_tag "period[#{field}]", period.send(field), id: "period_#{field}", rows: 5, class: 'tp-wide-field' %></div>
       <% else %>
-        <div><h4><%= l(label) %></h4><%= period.send(field).present? ? simple_format(h(period.send(field))) : content_tag(:p, '–', class: 'tp-hint') %></div>
+        <div><h4><%= l(label) %></h4><%= team_planning_text(period.send(field)) %></div>
       <% end %>
     <% end %>
   </div>

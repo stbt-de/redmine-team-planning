@@ -205,12 +205,23 @@ body.tp-dragging, body.tp-dragging * { cursor: grabbing !important; }
 .tp-close-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap; }
 .tp-timer { font-variant-numeric: tabular-nums; font-size: 13px; background: var(--tp-muted); padding: 4px 10px; border-radius: 999px; color: var(--tp-text-2); }
 .tp-timer.is-slow { background: var(--tp-warn-bg); color: var(--tp-warn-text); }
-details.tp-review { border-top: 1px solid var(--tp-line); padding: 8px 0; }
-details.tp-review:first-of-type { border-top: 0; }
+details.tp-review { border-top: 1px solid var(--tp-line); padding: 10px 0; }
+details.tp-review:first-of-type { border-top: 0; padding-top: 4px; }
 details.tp-review summary { cursor: pointer; font-weight: 500; }
-.tp-review-cols { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 6px; }
-.tp-review-cols h4 { margin: 0; font-size: 12px; color: var(--tp-text-4); }
-.tp-review-more { margin: 6px 0 0; font-size: 13px; }
+details.tp-review[open] summary { margin-bottom: 12px; }
+.tp-review-cols { display: grid; gap: 16px 24px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 8px; }
+/* Spaltenkopf: klein, mit Linie; der Text darunter mit Abstand */
+.tp-review-cols h4 { margin: 0 0 8px; padding: 0 0 6px; border: 0; border-bottom: 1px solid var(--tp-line); font-size: 12px; font-weight: 500; color: var(--tp-text-4); }
+.tp-review-cols > div > p { margin: 0 0 6px; }
+.tp-review-more { margin: 14px 0 0; font-size: 13px; }
+.tp-panel .tp-round-hint { margin: 10px 0 18px; }
+/* Formatierter Text (Markdown/Textile) in Rückblick und Notizen */
+.tp-wiki > :first-child { margin-top: 0; }
+.tp-wiki > :last-child { margin-bottom: 0; }
+.tp-wiki p { margin: 0 0 6px; }
+.tp-wiki ul, .tp-wiki ol { margin: 0 0 6px; padding-left: 20px; }
+.tp-wiki h1, .tp-wiki h2, .tp-wiki h3, .tp-wiki h4 { font-size: 14px; margin: 8px 0 4px; }
+.tp-review-cols .jstEditor, .tp-round-note .jstEditor { margin-top: 4px; }
 
 /* Frühere Zeiträume: Blättern in der Spalte, Detailseite, Übersicht */
 .tp-past-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; }

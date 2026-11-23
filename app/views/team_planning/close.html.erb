@@ -84,7 +84,14 @@
             <p><label for="review_<%= field %>"><%= l(label) %></label><%= text_area_tag "review[#{field}]", params.dig(:review, field), id: "review_#{field}", rows: 4 %></p>
           <% end %>
         </div>
+        <p class="tp-hint tp-round-hint"><%= l(:text_team_planning_notes_in_round) %> <%= link_to l(:button_team_planning_open_round), team_planning_team_path %></p>
         <p><label for="focus"><%= l(:label_team_planning_focus_for, period: next_period.label) %></label><%= text_field_tag :focus, params[:focus] || next_period.focus, id: 'focus', class: 'tp-wide-field', placeholder: l(:text_team_planning_focus_placeholder) %></p>
+      </section>
+
+      <section class="tp-panel tp-wide tp-personal-notes">
+        <div class="tp-panel-head"><h3><label for="notes"><%= l(:label_team_planning_personal_notes) %></label></h3><span class="tp-hint"><%= l(:text_team_planning_personal_notes_hint) %></span></div>
+        <%= text_area_tag :notes, params[:notes] || period.notes, id: 'notes', rows: 5, class: 'tp-wide-field wiki-edit', placeholder: l(:text_team_planning_personal_notes_placeholder) %>
+        <%= wikitoolbar_for 'notes' %>
       </section>
     </div>
     <p class="tp-close-actions">
@@ -104,7 +111,7 @@
       <summary><%= past.label %> · <%= l(:label_team_planning_done_count, count: past.items.where(result: 'done').count) %> · <%= format_hours(@planner.booked_hours(past)) %></summary>
       <div class="tp-review-cols">
         <% { review_good: :label_team_planning_review_good, review_bad: :label_team_planning_review_bad, review_change: :label_team_planning_review_change }.each do |field, label| %>
-          <div><h4><%= l(label) %></h4><%= past.send(field).present? ? simple_format(h(past.send(field))) : content_tag(:p, '–', class: 'tp-hint') %></div>
+          <div><h4><%= l(label) %></h4><%= team_planning_text(past.send(field)) %></div>
         <% end %>
       </div>
       <p class="tp-review-more"><%= link_to l(:button_team_planning_period_details), team_planning_period_path(past.starts_on.iso8601, team_planning_user_param(@user)) %></p>

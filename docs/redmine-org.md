@@ -54,7 +54,7 @@ Restart Redmine. Then grant the permissions (_Administration → Roles and permi
 
 ## Plugin version
 
-0.1.1
+0.1.2
 
 ## Redmine compatibility
 

@@ -43,6 +43,28 @@ module TeamPlanningHelper
     l(:"label_team_planning_result_#{result}") if result.present?
   end
 
+  # Rückblick und Notizen mit Redmines Textformatierung (Markdown oder
+  # Textile wie in Tickets, #123 wird zum Link); leer: Gedankenstrich
+  def team_planning_text(text)
+    return content_tag(:p, '–', class: 'tp-hint') if text.blank?
+
+    content_tag(:div, textilizable(text), class: 'wiki tp-wiki')
+  end
+
+  # Erste Zeilen als schlichter Text für Übersichten, ohne Formatierungszeichen
+  def team_planning_text_lines(text, count = 1)
+    text.to_s.lines.map { |line| team_planning_plain_line(line) }.reject(&:blank?).first(count)
+  end
+
+  def team_planning_plain_line(line)
+    line.strip
+        .sub(/\A(?:[-*+]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+|#+\s+|>\s*)/, '') # Liste, Aufgabe, Überschrift, Zitat
+        .gsub(/!?\[([^\]]*)\]\([^)]*\)/, '\1')                         # Links und Bilder
+        .gsub(/(\*\*|__|~~|`)/, '')                                    # fett, durchgestrichen, Code
+        .gsub(/(?<![\w*])[*_](\S(?:.*?\S)?)[*_](?![\w*])/, '\1')        # kursiv
+        .strip
+  end
+
   def team_planning_people_count(count)
     count == 1 ? l(:label_team_planning_day_one) : l(:label_team_planning_days, count: count)
   end

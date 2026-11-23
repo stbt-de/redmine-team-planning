@@ -683,13 +683,22 @@
     if (!notes) return;
     var state = $('[data-tp-notes-state]');
     var timer = null;
-    notes.addEventListener('input', function () {
+    var saved = notes.value;
+    var save = function () {
       clearTimeout(timer);
-      timer = setTimeout(function () {
-        request('PATCH', notes.dataset.url, { notes: notes.value }).then(function () {
-          if (state) state.textContent = notes.dataset.saved;
-        }).catch(showError);
-      }, 600);
+      if (notes.value === saved) return;
+      var value = notes.value;
+      request('PATCH', notes.dataset.url, { notes: value }).then(function () {
+        saved = value;
+        if (state) state.textContent = notes.dataset.saved;
+      }).catch(showError);
+    };
+    var later = function () { clearTimeout(timer); timer = setTimeout(save, 600); };
+    notes.addEventListener('input', later);
+    notes.addEventListener('blur', save);
+    // Redmines Werkzeugleiste ändert den Text ohne input-Ereignis
+    document.addEventListener('click', function (event) {
+      if (event.target.closest('.jstElements')) setTimeout(later, 0);
     });
   }
 

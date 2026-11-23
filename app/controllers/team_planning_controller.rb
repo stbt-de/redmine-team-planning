@@ -39,7 +39,7 @@ class TeamPlanningController < ApplicationController
     return render_404 unless @period
     return deny_access unless @planner.editable?
 
-    review = params.fetch(:period, {}).permit(:review_good, :review_bad, :review_change, :focus).to_h
+    review = params.fetch(:period, {}).permit(:review_good, :review_bad, :review_change, :focus, :notes).to_h
     TeamPlanningPeriod.transaction do
       @period.update!(review.transform_values(&:presence))
       notes = params.fetch(:rounds, {}).permit!.to_h
@@ -63,7 +63,7 @@ class TeamPlanningController < ApplicationController
     period = @closing.call(decisions: params[:decisions]&.permit!.to_h || {},
                            end_standing: params[:end_standing] || [],
                            review: params.fetch(:review, {}).permit(:good, :bad, :change).to_h.symbolize_keys,
-                           focus: params[:focus])
+                           focus: params[:focus], notes: params[:notes])
     flash[:notice] = l(:notice_team_planning_period_closed, period: period.label, next: @planner.current_period.label)
     notify_owner(l(:text_team_planning_change_closed, period: period.label))
     redirect_to team_planning_path(user_param)

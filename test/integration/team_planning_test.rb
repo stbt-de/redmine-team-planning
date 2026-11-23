@@ -130,12 +130,16 @@ class TeamPlanningIntegrationTest < Redmine::IntegrationTest
     get '/team_planning/close'
     assert_response :success
     assert_select "input[type=radio][name='decisions[#{issue.id}]']", 3
+    assert_select 'textarea#notes.wiki-edit'
 
-    post '/team_planning/close', params: { decisions: { issue.id => 'next' }, review: { good: 'Lief' }, focus: 'Fokus' }
+    post '/team_planning/close', params: { decisions: { issue.id => 'next' }, review: { good: 'Lief' }, focus: 'Fokus',
+                                           notes: 'Nur für mich' }
     assert_redirected_to '/team_planning'
     follow_redirect!
     assert_select '.flash.notice', text: /KW 48 abgeschlossen/
-    assert_equal 'Lief', TeamPlanningPeriod.find_by(user_id: @jsmith.id, starts_on: MONDAY).review_good
+    closed = TeamPlanningPeriod.find_by(user_id: @jsmith.id, starts_on: MONDAY)
+    assert_equal 'Lief', closed.review_good
+    assert_equal 'Nur für mich', closed.notes
   end
 
   def test_abschluss_ohne_entscheidung_zeigt_fehler
@@ -288,8 +292,13 @@ class TeamPlanningIntegrationTest < Redmine::IntegrationTest
     get path, params: { edit: 1 }
     assert_select 'form.tp-period-form textarea#period_review_good', text: /Alt gut/
     assert_select "textarea#round_#{round.id}", text: /Alte Notiz/
+    # Editor nur bei den Notizen, der Rückblick bleibt schlicht
+    assert_select "textarea#round_#{round.id}.wiki-edit"
+    assert_select 'textarea#period_review_good.wiki-edit', 0
 
-    patch path, params: { period: { review_good: 'Neu gut', review_bad: 'Neu weniger gut', review_change: '', focus: 'Neuer Fokus' },
+    assert_select 'textarea#period_notes.wiki-edit'
+    patch path, params: { period: { review_good: 'Neu gut', review_bad: 'Neu weniger gut', review_change: '', focus: 'Neuer Fokus',
+                                    notes: '**Merken:** Angebot nachfassen' },
                           rounds: { round.id.to_s => 'Neue Notiz' } }
     assert_redirected_to path
     period.reload
@@ -297,6 +306,9 @@ class TeamPlanningIntegrationTest < Redmine::IntegrationTest
     assert_equal 'Neu weniger gut', period.review_bad
     assert_nil period.review_change
     assert_equal 'Neuer Fokus', period.focus
+    assert_equal '**Merken:** Angebot nachfassen', period.notes
+    get path
+    assert_select '.tp-personal-notes .wiki strong', 'Merken:'
     assert_equal 'Neue Notiz', round.reload.notes
   end
 
@@ -322,5 +334,28 @@ class TeamPlanningIntegrationTest < Redmine::IntegrationTest
     assert_response :redirect
     assert_equal 'Ergänzt', period.reload.review_good
     assert(ActionMailer::Base.deliveries.any? { |m| m.to.include?(@dlopper.mail) })
+  end
+
+  def test_rueckblick_und_notizen_mit_textformatierung
+    issue = create_issue(assigned_to: @jsmith, subject: 'Verlinktes Ticket')
+    closed_period(@jsmith, MONDAY - 7, review_good: "**Wichtig** war\n\n- Punkt eins\n- Punkt zwei\n\n<script>alert(1)</script>",
+                                       review_bad: "- **Fett** und `Code` am Anfang")
+    TeamPlanningRound.create!(held_on: MONDAY - 7, notes: "Siehe ##{issue.id}\n\n1. erstens\n2. zweitens")
+
+    with_settings text_formatting: 'common_mark' do
+      get "/team_planning/periods/#{(MONDAY - 7).iso8601}"
+      assert_response :success
+      assert_select '.tp-review-cols .wiki strong', 'Wichtig'
+      assert_select '.tp-review-cols .wiki li', 3
+      assert_select '.tp-review-cols script', 0
+      assert_select '.tp-round-note .wiki a[href=?]', "/issues/#{issue.id}"
+      assert_select '.tp-round-note .wiki ol li', 2
+
+      # Kurzfassungen ohne Markdown-Zeichen
+      get '/team_planning/periods'
+      assert_select '.tp-period-review', text: /Wichtig war/
+      assert_select '.tp-period-review', text: /Fett und Code am Anfang/
+      assert_select '.tp-period-review', text: /\*\*|`/, count: 0
+    end
   end
 end

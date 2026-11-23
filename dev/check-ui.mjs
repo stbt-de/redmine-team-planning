@@ -103,6 +103,10 @@ const log = (...a) => console.log(...a);
   if (await p.locator('[data-tp-decide-all]').count()) await p.click('[data-tp-decide-all]');
   for (const g of await p.locator('.tp-close-form .tp-seg').all()) { const r = g.locator('input[value=next]'); if (!(await g.locator('input:checked').count())) await r.check({ force: true }); }
   await p.fill('#review_good', 'E2E gut'); await p.fill('#focus', 'E2E Fokus');
+  // Rückblick: schlichte Felder (kurze Stichpunkte), Editor nur bei Notizen
+  const closeToolbars = await p.locator('.tp-retro .jstElements').count();
+  log('10a close toolbars:', closeToolbars);
+  expect(closeToolbars === 0, 'Rückblick beim Abschließen soll ohne Werkzeugleiste sein: ' + closeToolbars);
   await p.screenshot({ path: S + '/e2e-close.png', fullPage: true });
   await p.click('.tp-close-form input[type=submit]'); await p.waitForLoadState();
   log('10 closed:', await p.locator('.flash.notice, #flash_notice').innerText(), '| url', p.url());
@@ -132,6 +136,12 @@ const log = (...a) => console.log(...a);
   // Teamrunde
   await p.goto(base + '/team_planning/team'); await p.fill('#tp-round-notes', 'E2E Notiz'); await p.waitForTimeout(1200);
   log('12 notes:', await p.locator('[data-tp-notes-state]').innerText(), '| persons', await p.locator('.tp-person').count());
+  // Werkzeugleiste in den Notizen: ändert den Text ohne input-Ereignis, muss trotzdem speichern
+  await p.locator('#tp-round-notes').evaluate((t) => { t.focus(); t.setSelectionRange(0, 3); });
+  await p.click('.tp-round-grid .jstElements .jstb_strong'); await p.waitForTimeout(1500);
+  await p.reload(); const notesAfter = await p.locator('#tp-round-notes').inputValue();
+  log('12b toolbar bold saved:', JSON.stringify(notesAfter));
+  expect(notesAfter.startsWith('**E2E**'), 'Fett über die Werkzeugleiste wurde nicht gespeichert: ' + notesAfter);
   await p.screenshot({ path: S + '/e2e-team.png', fullPage: true });
   await p.goto(base + '/team_planning/team?mode=project'); log('12 projects:', await p.locator('.tp-panel h3').count());
   // Meine Seite

@@ -13,12 +13,13 @@
 <div class="tp-round-grid">
   <section class="tp-panel">
     <div class="tp-panel-head"><h3><%= l(:label_team_planning_round_notes) %></h3><span class="tp-hint" data-tp-notes-state><%= l(:text_team_planning_notes_hint) %></span></div>
-    <%= text_area_tag :notes, round.round.notes, id: 'tp-round-notes', rows: 5, class: 'tp-wide-field',
+    <%= text_area_tag :notes, round.round.notes, id: 'tp-round-notes', rows: 6, class: 'tp-wide-field wiki-edit',
                       placeholder: l(:text_team_planning_notes_placeholder), data: { url: team_planning_round_path, saved: l(:text_team_planning_saved) } %>
+    <%= wikitoolbar_for 'tp-round-notes' %>
     <% earlier = round.earlier_rounds %>
     <% if earlier.any? %>
       <details class="tp-review"><summary><%= l(:label_team_planning_earlier_rounds, count: earlier.size) %></summary>
-        <% earlier.each do |r| %><div class="tp-k"><%= format_date(r.held_on) %></div><%= simple_format(h(r.notes)) %><% end %>
+        <% earlier.each do |r| %><div class="tp-k"><%= format_date(r.held_on) %></div><%= team_planning_text(r.notes) %><% end %>
       </details>
     <% end %>
   </section>
@@ -79,8 +80,8 @@
           <div class="tp-k"><%= l(:label_team_planning_review) %><% if last %> <%= link_to last.label, team_planning_period_path(last.starts_on.iso8601, team_planning_user_param(entry.user)) %><%= " · #{l(:label_team_planning_done_count, count: last.items.where(result: 'done').count)} · #{format_hours(planner.booked_hours(last))}" %><% end %></div>
           <% if last && (last.review_good.present? || last.review_bad.present?) %>
             <ul>
-              <% last.review_good.to_s.lines.map(&:strip).reject(&:blank?).first(2).each do |line| %><li><%= line %></li><% end %>
-              <% last.review_bad.to_s.lines.map(&:strip).reject(&:blank?).first(1).each do |line| %><li><span class="tp-hint"><%= l(:label_team_planning_review_bad) %>:</span> <%= line %></li><% end %>
+              <% team_planning_text_lines(last.review_good, 2).each do |line| %><li><%= line %></li><% end %>
+              <% team_planning_text_lines(last.review_bad).each do |line| %><li><span class="tp-hint"><%= l(:label_team_planning_review_bad) %>:</span> <%= line %></li><% end %>
             </ul>
           <% else %><p class="tp-hint">–</p><% end %>
         </div>

@@ -26,11 +26,13 @@ with Redmine's permissions and workflows.
   the reason. *Undo* restores status and assignee.
 - **Closing a period** – summary (done, continuing on purpose, to decide, hours logged),
   one decision per open issue (next period, backlog, close), a short review (went well,
-  less well, what we change) and the focus for the next period. Under five minutes.
+  less well, what we change), personal notes and the focus for the next period. Under five
+  minutes. Reviews and notes use Redmine's text formatting (Markdown or Textile, `#123`
+  links), notes with the usual editor toolbar.
 - **Earlier periods** – step back through closed periods right on the board (‹ ›), or open
   a period's page: summary, every issue with its result and hours, the focus, the review
-  (went well, less well, what we change) and the notes of the team meetings held in that
-  period. *Earlier periods* lists them all with the first lines of each review.
+  (went well, less well, what we change), personal notes and the notes of the team meetings
+  held in that period – all editable afterwards by the owner or a project lead. *Earlier periods* lists them all with the first lines of each review.
 - **Team meeting** – all plans by person or by project (customer), with who is prepared,
   the last review, focus, load and what to talk about; meeting notes for topics that
   belong to nobody; an email reminder the day before to everyone not prepared yet.
@@ -92,6 +94,9 @@ bundle exec rake redmine:plugins:migrate NAME=redmine_team_planning RAILS_ENV=pr
 ```
 
 Restart Redmine. Requires Redmine 6.0 or newer; tested with 7.0, 6.1 and 6.0.
+
+**Updating:** replace the plugin folder, run the same `redmine:plugins:migrate` command
+(it does nothing when there is no new migration) and restart Redmine.
 
 ## Setting it up step by step
 

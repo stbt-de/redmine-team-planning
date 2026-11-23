@@ -15,7 +15,7 @@ Redmine::Plugin.register :redmine_team_planning do
   author 'stbt.de'
   author_url 'https://stbt.de/'
   description 'Planung in Zeiträumen: Board mit Ziehen und Ablegen, Abschluss mit Rückblick, Teamrunde, Abschluss-Aktionen.'
-  version '0.1.1'
+  version '0.1.2'
   url 'https://github.com/stbt-de/redmine-team-planning'
   requires_redmine version_or_higher: '6.0.0'
 

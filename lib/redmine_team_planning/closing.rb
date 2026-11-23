@@ -41,8 +41,9 @@ module RedmineTeamPlanning
     end
 
     # decisions: { issue_id => next|backlog|close }, end_standing: [issue_id],
-    # review: { good:, bad:, change: }, focus: Fokus des nächsten Zeitraums
-    def call(decisions:, end_standing: [], review: {}, focus: nil)
+    # review: { good:, bad:, change: }, focus: Fokus des nächsten Zeitraums,
+    # notes: persönliche Notizen zum abgeschlossenen Zeitraum
+    def call(decisions:, end_standing: [], review: {}, focus: nil, notes: nil)
       raise Planner::Error, I18n.t(:error_team_planning_not_allowed) unless planner.editable?
 
       decisions = decisions.to_h.transform_keys(&:to_i)
@@ -75,7 +76,8 @@ module RedmineTeamPlanning
         Array(end_standing).map(&:to_i).each { |issue_id| end_standing!(issue_id) }
 
         closed_period.update!(closed_at: Time.current, review_good: review[:good].presence,
-                              review_bad: review[:bad].presence, review_change: review[:change].presence)
+                              review_bad: review[:bad].presence, review_change: review[:change].presence,
+                              notes: notes.presence)
         target.update!(focus: focus.presence) if focus.present?
       end
       planner.reset

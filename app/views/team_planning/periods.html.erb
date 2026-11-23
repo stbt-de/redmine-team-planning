@@ -14,8 +14,8 @@
   <div class="tp-list">
     <% @periods.each do |period| %>
       <% done = period.items.count { |i| i.result == 'done' } %>
-      <% good = period.review_good.to_s.lines.map(&:strip).reject(&:blank?).first %>
-      <% bad = period.review_bad.to_s.lines.map(&:strip).reject(&:blank?).first %>
+      <% good = team_planning_text_lines(period.review_good).first %>
+      <% bad = team_planning_text_lines(period.review_bad).first %>
       <div class="tp-list-row tp-period-row">
         <span class="tp-t">
           <%= link_to period.label, team_planning_period_path(period.starts_on.iso8601, up), class: 'tp-period-link' %>
