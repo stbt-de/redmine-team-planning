@@ -1,0 +1,102 @@
+<% html_title l(:label_team_planning_round) %>
+<% round = @team_round %>
+<% settings = RedmineTeamPlanning::Settings %>
+<div class="contextual tp-tools">
+  <span class="tp-seg" role="group" aria-label="<%= l(:label_team_planning_grouping) %>">
+    <%= link_to l(:label_team_planning_by_person), team_planning_team_path, 'aria-pressed': @mode == 'person' %>
+    <%= link_to l(:label_team_planning_by_project), team_planning_team_path(mode: 'project'), 'aria-pressed': @mode == 'project' %>
+  </span>
+</div>
+<h2><%= l(:label_team_planning_round_on, day: day_name(round.meeting_on.wday), date: format_date(round.meeting_on)) %></h2>
+<p class="tp-sub"><%= l(:text_team_planning_round_hint) %></p>
+
+<div class="tp-round-grid">
+  <section class="tp-panel">
+    <div class="tp-panel-head"><h3><%= l(:label_team_planning_round_notes) %></h3><span class="tp-hint" data-tp-notes-state><%= l(:text_team_planning_notes_hint) %></span></div>
+    <%= text_area_tag :notes, round.round.notes, id: 'tp-round-notes', rows: 5, class: 'tp-wide-field',
+                      placeholder: l(:text_team_planning_notes_placeholder), data: { url: team_planning_round_path, saved: l(:text_team_planning_saved) } %>
+    <% earlier = round.earlier_rounds %>
+    <% if earlier.any? %>
+      <details class="tp-review"><summary><%= l(:label_team_planning_earlier_rounds, count: earlier.size) %></summary>
+        <% earlier.each do |r| %><div class="tp-k"><%= format_date(r.held_on) %></div><%= simple_format(h(r.notes)) %><% end %>
+      </details>
+    <% end %>
+  </section>
+  <section class="tp-panel">
+    <div class="tp-panel-head"><h3><%= l(:label_team_planning_reminder) %></h3>
+      <% if User.current.admin? %><%= link_to l(:label_team_planning_configure), plugin_settings_path('redmine_team_planning') %><% end %></div>
+    <% if settings.enabled?('reminder_enabled') %>
+      <p><%= l(:"text_team_planning_reminder_#{settings['reminder_time']}") %>, <%= l(:"text_team_planning_reminder_to_#{settings['reminder_recipients']}") %>.</p>
+      <% open = round.entries.select(&:open?) %>
+      <p class="tp-hint"><%= open.any? ? l(:text_team_planning_reminder_open, names: open.map { |e| e.user.firstname }.join(', ')) : l(:text_team_planning_reminder_all_prepared) %></p>
+      <% if round.round.reminded_at %><p class="tp-hint"><%= l(:text_team_planning_reminder_sent, time: format_time(round.round.reminded_at)) %></p><% end %>
+    <% else %>
+      <p class="tp-hint"><%= l(:text_team_planning_reminder_off) %></p>
+    <% end %>
+  </section>
+</div>
+
+<% if @mode == 'project' %>
+  <% round.by_project.each do |project, rows| %>
+    <section class="tp-panel">
+      <div class="tp-panel-head">
+        <h3><%= team_planning_project_mark(project) %> <%= project.name %></h3>
+        <span class="tp-hint"><%= l(:label_team_planning_open_count, count: rows.count { |issue, entry, item| item && !entry.planner.done?(item) }) %> · <%= rows.map { |_, e, _| e.user.name }.uniq.join(', ') %></span>
+      </div>
+      <div class="tp-list">
+        <% rows.sort_by { |_, _, item| item.nil? ? 1 : 0 }.each do |issue, entry, item| %>
+          <div class="tp-list-row<%= ' is-done' if item && entry.planner.done?(item) %>">
+            <span class="tp-avatar"><%= entry.user.firstname.to_s.first %><%= entry.user.lastname.to_s.first %></span>
+            <span class="tp-t"><%= link_to issue.subject, issue_path(issue) %><small>#<%= issue.id %> · <%= entry.user.name %><%= " · #{l(:label_team_planning_standing)}" unless item %><%= " · #{l(:label_team_planning_long)}" if item&.long? %></small></span>
+            <span class="tp-pill <%= team_planning_status_class(issue, entry.planner) %>"><%= issue.status.name %></span>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+<% else %>
+  <div class="tp-team">
+    <% round.entries.each do |entry| %>
+      <% planner = entry.planner %>
+      <% items = planner.items(entry.period) %>
+      <% limit = planner.effective_limit(entry.period) %>
+      <% done = items.count { |i| planner.done?(i) } %>
+      <% last = planner.past_period %>
+      <% hints = [] %>
+      <% hints << l(:label_team_planning_absent_limit, count: entry.period.absence_days, limit: limit) if entry.period.absence_days.positive? %>
+      <% hints << "#{l(:label_team_planning_of_limit, count: items.size, limit: limit)}: #{l(:label_team_planning_overfull)}" if items.size > limit %>
+      <% stuck = items.count { |i| !i.long? && !planner.done?(i) && planner.carries(i.issue) >= 3 } %>
+      <% hints << l(:label_team_planning_stuck, count: stuck) if stuck.positive? %>
+      <% longs = items.count(&:long?) %>
+      <% hints << l(:label_team_planning_long_count, count: longs) if longs.positive? %>
+      <article class="tp-person">
+        <div>
+          <div class="tp-who"><span class="tp-avatar"><%= entry.user.firstname.to_s.first %><%= entry.user.lastname.to_s.first %></span>
+            <div><strong><%= entry.user.name %></strong><div class="tp-hint"><%= l(:label_team_planning_period_length, count: planner.weeks) %></div></div></div>
+          <span class="tp-state is-<%= entry.state %>"><%= entry.state == :running ? l(:label_team_planning_state_running, period: entry.period.label) : l(:"label_team_planning_state_#{entry.state}") %></span>
+        </div>
+        <div>
+          <div class="tp-k"><%= l(:label_team_planning_review) %><%= " #{last.label} · #{l(:label_team_planning_done_count, count: last.items.where(result: 'done').count)} · #{format_hours(planner.booked_hours(last))}" if last %></div>
+          <% if last && (last.review_good.present? || last.review_bad.present?) %>
+            <ul>
+              <% last.review_good.to_s.lines.map(&:strip).reject(&:blank?).first(2).each do |line| %><li><%= line %></li><% end %>
+              <% last.review_bad.to_s.lines.map(&:strip).reject(&:blank?).first(1).each do |line| %><li><span class="tp-hint"><%= l(:label_team_planning_review_bad) %>:</span> <%= line %></li><% end %>
+            </ul>
+          <% else %><p class="tp-hint">–</p><% end %>
+        </div>
+        <div>
+          <div class="tp-k"><%= entry.period.label %><%= " (#{l(:label_team_planning_draft)})" if entry.open? %> · <%= l(:label_team_planning_focus) %></div>
+          <div class="tp-focus"><%= entry.period.focus.presence || planner.current_period.focus.presence || '–' %></div>
+          <div class="tp-meter<%= ' is-over' if items.size > limit %>"><span class="tp-meter-plan" style="width: <%= limit.positive? ? [items.size * 100 / limit, 100].min : 100 %>%"></span><span class="tp-meter-done" style="width: <%= limit.positive? ? [done * 100 / limit, 100].min : 0 %>%"></span></div>
+          <div class="tp-hint tp-num"><%= l(:label_team_planning_of_limit, count: items.size, limit: limit) %> · <%= l(:label_team_planning_standing_count, count: planner.standings.size) %></div>
+        </div>
+        <div>
+          <div class="tp-k"><%= l(:label_team_planning_to_discuss) %></div>
+          <% if hints.any? %><ul><% hints.each do |hint| %><li><%= hint %></li><% end %></ul><% else %><p class="tp-hint"><%= l(:text_team_planning_nothing_special) %></p><% end %>
+          <%= link_to l(:button_team_planning_open_board), team_planning_path(team_planning_user_param(entry.user)), class: 'tp-btn tp-btn-sm' %>
+        </div>
+      </article>
+    <% end %>
+    <% if round.entries.empty? %><p class="nodata"><%= l(:text_team_planning_no_members) %></p><% end %>
+  </div>
+<% end %>

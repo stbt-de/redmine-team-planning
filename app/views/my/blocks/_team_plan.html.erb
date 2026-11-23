@@ -1,0 +1,77 @@
+<%# Block "Planung" auf Meine Seite: Tickets des Zeitraums, abhaken, Zeit buchen %>
+<% if RedmineTeamPlanning::Access.use?(User.current) %>
+  <%
+    planner = RedmineTeamPlanning::Planner.new(User.current)
+    past = params[:team_plan] == 'past' ? planner.past_period : nil
+    period = past || planner.current_period
+    items = planner.items(period)
+    standings = planner.standings
+    done = items.count { |i| planner.done?(i) }
+    today = User.current.today
+    default_date = period.include?(today) ? today : [period.last_workday, today].min
+    activities = TimeEntryActivity.shared.active.sorted.to_a
+  %>
+  <div class="tp-widget" data-tp-widget
+       data-complete-url="<%= team_planning_complete_path(0) %>" data-reopen-url="<%= team_planning_reopen_path(0) %>"
+       data-done-options-url="<%= team_planning_done_options_path(0) %>" data-time-url="<%= team_planning_log_time_path(0) %>">
+    <div class="tp-widget-head">
+      <h3><%= l(:label_team_planning_widget) %></h3>
+      <span class="tp-wnav">
+        <% if past %>
+          <%= link_to "#{period.label} · #{l(:label_team_planning_closed)}", my_page_path, class: 'tp-hint', title: l(:label_team_planning_back_to_current) %>
+          <%= link_to '›', my_page_path, class: 'tp-icon-btn', 'aria-label': l(:label_team_planning_back_to_current) %>
+        <% else %>
+          <% if planner.past_period %><%= link_to '‹', my_page_path(team_plan: 'past'), class: 'tp-icon-btn', 'aria-label': l(:label_team_planning_previous_period) %><% end %>
+          <span class="tp-num"><%= period.label %></span>
+        <% end %>
+      </span>
+    </div>
+    <p class="tp-wfocus"><%= past ? l(:text_team_planning_late_booking, range: period.range_label) : (period.focus.present? ? "#{l(:label_team_planning_focus)}: #{period.focus}" : period.range_label) %></p>
+
+    <% rows = standings.map { |s| [s.issue, nil] } + items.map { |i| [i.issue, i] } %>
+    <% rows.each do |issue, item| %>
+      <% is_done = item && planner.done?(item) %>
+      <div class="tp-wrow<%= ' is-done' if is_done %>" data-issue-id="<%= issue.id %>">
+        <div class="tp-wline">
+          <span class="tp-wtitle">
+            <% if item && !past %><button type="button" class="tp-check" data-tp-check aria-pressed="<%= is_done %>" aria-label="<%= l(:label_team_planning_done) %>"><%= '✓' if is_done %></button><% else %><span class="tp-check-space" aria-hidden="true"></span><% end %>
+            <%= team_planning_project_mark(issue.project) %>
+            <%= link_to issue.subject, issue_path(issue), class: 'tp-t' %>
+            <% unless item %><span class="tp-pill is-kind"><%= l(:label_team_planning_standing) %></span><% end %>
+            <% if item&.long? %><span class="tp-pill is-kind"><%= l(:label_team_planning_long) %></span><% end %>
+            <% if item&.result %><span class="tp-pill tp-result-<%= item.result %>"><%= team_planning_result_label(item.result) %></span><% end %>
+          </span>
+          <span class="tp-wbooked tp-num"><%= format('%g', planner.booked_for(issue, period).round(2)).tr('.', ',') %><%= " / #{format('%g', item.planned_hours.to_f).tr('.', ',')}" if item&.planned_hours %> h</span>
+          <% if period.starts_on <= today && User.current.allowed_to?(:log_time, issue.project) %>
+            <form class="tp-wbook" data-tp-book>
+              <% [0.5, 1, 2].each do |h| %><button type="button" class="tp-chip tp-num" data-hours="<%= h %>">+<%= format('%g', h).tr('.', ',') %></button><% end %>
+              <input type="text" name="hours" inputmode="decimal" class="tp-num" placeholder="h" aria-label="<%= l(:field_hours) %> #<%= issue.id %>" autocomplete="off">
+              <button type="submit" class="tp-btn tp-btn-sm"><%= l(:label_team_planning_book) %></button>
+              <div class="tp-wmore" hidden>
+                <input type="text" name="comments" placeholder="<%= l(:label_team_planning_comment_optional) %>" aria-label="<%= l(:field_comments) %>">
+                <select name="activity_id" aria-label="<%= l(:field_activity) %>">
+                  <% activities.each do |a| %><option value="<%= a.id %>"<%= ' selected' if a.is_default? %>><%= a.name %></option><% end %>
+                </select>
+                <select name="spent_on" aria-label="<%= l(:field_spent_on) %>">
+                  <% (0...period.workdays).map { |n| period.starts_on + (7 * (n / 5)) + (n % 5) }.select { |d| d <= today }.each do |d| %>
+                    <option value="<%= d.iso8601 %>"<%= ' selected' if d == default_date %>><%= d == today ? l(:label_today) : "#{day_letter(d.wday)} #{d.strftime('%-d.%-m.')}" %></option>
+                  <% end %>
+                </select>
+              </div>
+            </form>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+    <% if rows.empty? %><p class="tp-hint"><%= l(:text_team_planning_widget_empty, period: period.label) %></p><% end %>
+    <% if period.starts_on > today && rows.any? %><p class="tp-hint"><%= l(:text_team_planning_booking_from, date: period.starts_on.strftime('%-d.%-m.')) %></p><% end %>
+    <div class="tp-wfoot">
+      <div class="tp-meter"><span class="tp-meter-done" style="width: <%= items.any? ? done * 100 / items.size : 0 %>%"></span></div>
+      <span class="tp-num"><%= l(:label_team_planning_done_of, done: done, count: items.size) %> · <%= l(:label_team_planning_booked, hours: format_hours(planner.booked_hours(period))) %></span>
+      <%= link_to l(:button_team_planning_open_board), team_planning_path %>
+    </div>
+  </div>
+  <%= render partial: 'team_planning/templates' %>
+<% else %>
+  <p class="nodata"><%= l(:text_team_planning_no_permission) %></p>
+<% end %>

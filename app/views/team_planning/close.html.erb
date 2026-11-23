@@ -1,0 +1,113 @@
+<% html_title l(:button_team_planning_close_period, period: @closing.period.label) %>
+<% period = @closing.period %>
+<% next_period = @closing.next_period %>
+<% items = @closing.items %>
+<% done_items = @closing.done_items %>
+<% open_items = @closing.open_items %>
+<% automatic = @closing.automatic_items %>
+<% standings = @planner.standings %>
+<% unplanned = items.count { |i| i.origin == 'unplanned' && @planner.done?(i) } %>
+<% booked = @planner.booked_hours(period) %>
+<% outside = @planner.booked_outside(period) %>
+
+<div class="contextual tp-tools">
+  <%= team_planning_person_select(@user, controller: 'team_planning', action: 'close') %>
+  <span class="tp-timer" data-tp-timer title="<%= l(:text_team_planning_timer) %>">0:00 min</span>
+</div>
+<h2><%= l(:button_team_planning_close_period, period: period.label) %></h2>
+<p class="tp-sub"><%= @user.name %> · <%= period.range_label %> · <%= l(:text_team_planning_then_plan, period: next_period.label) %></p>
+
+<% if @planner.editable? %>
+  <% if period.last_workday >= User.current.today %>
+    <p class="tp-info"><%= l(:text_team_planning_still_running, period: period.label, date: period.last_workday.strftime('%-d.%-m.')) %></p>
+  <% end %>
+
+  <%= form_tag(team_planning_close_path(team_planning_user_param(@user)), class: 'tp-close-form', data: { tp_close: true }) do %>
+    <div class="tp-close-grid">
+      <section class="tp-panel">
+        <h3><%= l(:label_team_planning_balance) %></h3>
+        <div class="tp-stats">
+          <div class="tp-stat"><b><%= done_items.size %></b><span><%= l(:label_team_planning_stat_done) %><%= ", #{l(:label_team_planning_stat_unplanned, count: unplanned)}" if unplanned.positive? %></span></div>
+          <div class="tp-stat"><b><%= automatic.size + standings.size %></b><span><%= l(:label_team_planning_stat_continuing) %></span></div>
+          <div class="tp-stat"><b><%= open_items.size %></b><span><%= l(:label_team_planning_stat_to_decide) %></span></div>
+          <div class="tp-stat"><b><%= format_hours(booked) %></b><span><%= l(:label_team_planning_stat_booked) %></span></div>
+        </div>
+        <p class="tp-hint"><%= l(:text_team_planning_booked_all, range: period.range_label) %><%= ", #{l(:label_team_planning_outside, hours: format_hours(outside))}" if outside.positive? %>.</p>
+        <div class="tp-list">
+          <% done_items.each do |item| %>
+            <div class="tp-list-row"><%= team_planning_project_mark(item.issue.project) %><span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small>#<%= item.issue.id %><%= " · #{l(:label_team_planning_unplanned)}" if item.origin == 'unplanned' %></small></span><span class="tp-num"><%= format_hours(@planner.booked_for(item.issue, period)) %></span></div>
+          <% end %>
+          <% if done_items.empty? %><p class="tp-hint"><%= l(:text_team_planning_nothing_done) %></p><% end %>
+        </div>
+      </section>
+
+      <section class="tp-panel">
+        <div class="tp-panel-head">
+          <h3><%= l(:label_team_planning_open_what_next) %></h3>
+          <% if open_items.size > 1 %><button type="button" class="tp-btn tp-btn-sm" data-tp-decide-all="next"><%= l(:label_team_planning_all_to, period: next_period.label) %></button><% end %>
+        </div>
+        <div class="tp-list">
+          <% open_items.each do |item| %>
+            <div class="tp-list-row">
+              <%= team_planning_project_mark(item.issue.project) %>
+              <span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small>#<%= item.issue.id %> · <%= item.issue.status.name %><%= " · #{l(:label_team_planning_carried_times, count: @planner.carries(item.issue))}" if @planner.carries(item.issue).positive? %> · <%= format_hours(@planner.booked_for(item.issue, period)) %></small></span>
+              <span class="tp-seg" role="radiogroup" aria-label="<%= l(:label_team_planning_decision_for, issue: "##{item.issue.id}") %>">
+                <% { 'next' => next_period.label, 'backlog' => l(:label_team_planning_backlog), 'close' => l(:button_close) }.each do |value, label| %>
+                  <label><input type="radio" name="decisions[<%= item.issue.id %>]" value="<%= value %>" required<%= ' checked' if params.dig(:decisions, item.issue.id.to_s) == value %>><span><%= label %></span></label>
+                <% end %>
+              </span>
+            </div>
+          <% end %>
+          <% if open_items.empty? %><p class="tp-hint"><%= l(:text_team_planning_nothing_open) %></p><% end %>
+        </div>
+        <% if automatic.any? || standings.any? %>
+          <div class="tp-k"><%= l(:label_team_planning_continues_to, period: next_period.label) %></div>
+          <div class="tp-list">
+            <% standings.each do |standing| %>
+              <div class="tp-list-row">
+                <%= team_planning_project_mark(standing.issue.project) %>
+                <span class="tp-t"><%= link_to standing.issue.subject, issue_path(standing.issue) %><small><%= l(:label_team_planning_standing) %> · <%= format_hours(@planner.booked_for(standing.issue, period)) %></small></span>
+                <label class="tp-check-label"><input type="checkbox" name="end_standing[]" value="<%= standing.issue_id %>"> <%= l(:label_team_planning_end_standing_short) %></label>
+              </div>
+            <% end %>
+            <% automatic.each do |item| %>
+              <div class="tp-list-row"><%= team_planning_project_mark(item.issue.project) %><span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small><%= item.until_on ? l(:label_team_planning_long_until, week: item.until_on.cweek) : l(:label_team_planning_long) %> · <%= format_hours(@planner.booked_for(item.issue, period)) %></small></span></div>
+            <% end %>
+          </div>
+        <% end %>
+      </section>
+
+      <section class="tp-panel tp-wide">
+        <div class="tp-panel-head"><h3><%= l(:label_team_planning_review) %></h3><span class="tp-hint"><%= l(:text_team_planning_review_hint) %></span></div>
+        <div class="tp-retro">
+          <% { good: :label_team_planning_review_good, bad: :label_team_planning_review_bad, change: :label_team_planning_review_change }.each do |field, label| %>
+            <p><label for="review_<%= field %>"><%= l(label) %></label><%= text_area_tag "review[#{field}]", params.dig(:review, field), id: "review_#{field}", rows: 4 %></p>
+          <% end %>
+        </div>
+        <p><label for="focus"><%= l(:label_team_planning_focus_for, period: next_period.label) %></label><%= text_field_tag :focus, params[:focus] || next_period.focus, id: 'focus', class: 'tp-wide-field', placeholder: l(:text_team_planning_focus_placeholder) %></p>
+      </section>
+    </div>
+    <p class="tp-close-actions">
+      <span class="tp-hint" data-tp-missing data-template="<%= l(:text_team_planning_decisions_left) %>"></span>
+      <%= submit_tag l(:button_team_planning_close_and_open, period: next_period.label), class: 'tp-btn tp-btn-primary', name: nil %>
+    </p>
+  <% end %>
+<% else %>
+  <p class="tp-banner"><%= l(:text_team_planning_viewing_other, name: @user.firstname) %></p>
+<% end %>
+
+<% history = TeamPlanningPeriod.where(user_id: @user.id).closed.order(starts_on: :desc).limit(12) %>
+<section class="tp-panel">
+  <div class="tp-panel-head"><h3><%= l(:label_team_planning_earlier_reviews) %></h3></div>
+  <% history.each_with_index do |past, index| %>
+    <details class="tp-review"<%= ' open' if index.zero? %>>
+      <summary><%= past.label %> · <%= l(:label_team_planning_done_count, count: past.items.where(result: 'done').count) %> · <%= format_hours(@planner.booked_hours(past)) %></summary>
+      <div class="tp-review-cols">
+        <% { review_good: :label_team_planning_review_good, review_bad: :label_team_planning_review_bad, review_change: :label_team_planning_review_change }.each do |field, label| %>
+          <div><h4><%= l(label) %></h4><%= past.send(field).present? ? simple_format(h(past.send(field))) : content_tag(:p, '–', class: 'tp-hint') %></div>
+        <% end %>
+      </div>
+    </details>
+  <% end %>
+  <% if history.empty? %><p class="tp-hint"><%= l(:text_team_planning_no_reviews) %></p><% end %>
+</section>

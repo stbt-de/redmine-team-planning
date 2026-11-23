@@ -1,0 +1,8 @@
+<%= l(:mail_body_team_planning_reminder_greeting, name: @user.firstname) %>
+
+<%= l(:mail_body_team_planning_reminder, date: format_date(@meeting_on)) %>
+<%= @period.closed? ? l(:mail_body_team_planning_prepared) : l(:mail_body_team_planning_not_closed, period: @period.label) %>
+
+<%= l(:mail_body_team_planning_status, done: @done, count: @items.size, hours: l_hours(@booked)) %>
+
+<%= l(:button_team_planning_close_period, period: @period.label) %>: <%= @url %>

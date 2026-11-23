@@ -1,0 +1,57 @@
+<% s = RedmineTeamPlanning::Settings %>
+<% actions = s.done_actions %>
+<% statuses = IssueStatus.sorted.to_a %>
+<% roles = Role.givable.sorted.to_a %>
+<% projects = Project.active.sorted.to_a %>
+
+<fieldset class="box tabular tp-settings">
+  <legend><%= l(:label_team_planning_done_actions) %></legend>
+  <p class="tp-hint"><%= l(:text_team_planning_done_actions_hint) %></p>
+  <table class="list tp-actions-table">
+    <thead><tr><th><%= l(:field_name) %></th><th><%= l(:field_status) %></th><th><%= l(:field_assigned_to) %></th><th><%= l(:label_team_planning_comment) %></th><th><%= l(:label_project_plural) %></th></tr></thead>
+    <tbody>
+      <% (actions + Array.new(2) { {} }).each_with_index do |action, index| %>
+        <% prefix = "settings[done_actions][#{index}]" %>
+        <tr>
+          <td><%= hidden_field_tag "#{prefix}[id]", action['id'] %><%= text_field_tag "#{prefix}[label]", action['label'], size: 24, 'aria-label': l(:field_name) %></td>
+          <td><%= select_tag "#{prefix}[status_id]", options_for_select([['', '']] + statuses.map { |st| [st.name, st.id] }, action['status_id']), 'aria-label': l(:field_status) %></td>
+          <td><%= select_tag "#{prefix}[assign]", options_for_select([[l(:label_team_planning_assign_keep), 'keep'], [l(:label_team_planning_assign_author), 'author']] +
+                                                                    roles.map { |role| [l(:label_team_planning_assign_role, role: role.name), "role:#{role.id}"] }, action['assign']), 'aria-label': l(:field_assigned_to) %></td>
+          <td><%= hidden_field_tag "#{prefix}[comment]", '0', id: nil %><%= check_box_tag "#{prefix}[comment]", '1', action['comment'], id: nil, 'aria-label': l(:label_team_planning_comment) %></td>
+          <td><%= select_tag "#{prefix}[project_ids]", options_from_collection_for_select(projects, :id, :name, action['project_ids']), multiple: true, size: 3, 'aria-label': l(:label_project_plural) %>
+            <br><span class="tp-hint"><%= l(:text_team_planning_all_projects_if_empty) %></span></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p class="tp-hint"><%= l(:text_team_planning_done_actions_order) %></p>
+  <p><label for="settings_comment_template"><%= l(:label_team_planning_comment_template) %></label>
+    <%= text_field_tag 'settings[comment_template]', s['comment_template'], size: 60 %>
+    <em class="info"><%= l(:text_team_planning_comment_placeholders) %></em></p>
+  <p><label for="settings_done_status_ids"><%= l(:label_team_planning_done_statuses) %></label>
+    <%= hidden_field_tag 'settings[done_status_ids][]', '' %>
+    <%= select_tag 'settings[done_status_ids]', options_from_collection_for_select(statuses, :id, :name, Array(s['done_status_ids']).map(&:to_i)), multiple: true, size: 6, name: 'settings[done_status_ids][]' %>
+    <em class="info"><%= l(:text_team_planning_done_statuses_hint, statuses: IssueStatus.where(id: s.done_status_ids).map(&:name).join(', ')) %></em></p>
+</fieldset>
+
+<fieldset class="box tabular tp-settings">
+  <legend><%= l(:label_team_planning_board) %></legend>
+  <p><label for="settings_pool_months"><%= l(:label_team_planning_pool_months) %></label><%= number_field_tag 'settings[pool_months]', s['pool_months'], min: 1, max: 60 %></p>
+  <p><label for="settings_tracker_id"><%= l(:label_team_planning_quick_tracker) %></label>
+    <%= select_tag 'settings[tracker_id]', options_for_select([[l(:label_team_planning_tracker_auto), '']] + Tracker.sorted.map { |t| [t.name, t.id] }, s['tracker_id']) %></p>
+</fieldset>
+
+<fieldset class="box tabular tp-settings">
+  <legend><%= l(:label_team_planning_round) %></legend>
+  <p><label for="settings_meeting_wday"><%= l(:label_team_planning_meeting_day) %></label>
+    <%= select_tag 'settings[meeting_wday]', options_for_select((1..5).map { |d| [day_name(d % 7), d] }, s['meeting_wday'].to_i) %></p>
+  <p><label for="settings_reminder_enabled"><%= l(:label_team_planning_reminder) %></label>
+    <%= hidden_field_tag 'settings[reminder_enabled]', '0', id: nil %><%= check_box_tag 'settings[reminder_enabled]', '1', s.enabled?('reminder_enabled') %></p>
+  <p><label for="settings_reminder_time"><%= l(:label_team_planning_reminder_time) %></label>
+    <%= select_tag 'settings[reminder_time]', options_for_select(%w[eve16 eve9 day8].map { |v| [l(:"text_team_planning_reminder_#{v}"), v] }, s['reminder_time']) %></p>
+  <p><label for="settings_reminder_recipients"><%= l(:label_team_planning_reminder_recipients) %></label>
+    <%= select_tag 'settings[reminder_recipients]', options_for_select(%w[open all].map { |v| [l(:"text_team_planning_reminder_to_#{v}"), v] }, s['reminder_recipients']) %>
+    <em class="info"><%= l(:text_team_planning_reminder_cron) %></em></p>
+  <p><label for="settings_notify_on_foreign_edit"><%= l(:label_team_planning_notify_foreign) %></label>
+    <%= hidden_field_tag 'settings[notify_on_foreign_edit]', '0', id: nil %><%= check_box_tag 'settings[notify_on_foreign_edit]', '1', s.enabled?('notify_on_foreign_edit') %></p>
+</fieldset>

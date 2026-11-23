@@ -1,0 +1,58 @@
+<%# Vorlagen und Texte für assets/javascripts/team_planning.js %>
+<% projects = Project.visible.where(status: Project::STATUS_ACTIVE).select { |p| User.current.allowed_to?(:add_issues, p) }.sort_by { |p| p.self_and_ancestors.map(&:name).join(' » ').downcase } %>
+<template id="tp-add-template">
+  <form class="tp-add-form">
+    <input type="text" name="subject" class="tp-add-title" required maxlength="255" autocomplete="off"
+           placeholder="<%= l(:text_team_planning_add_placeholder) %>" aria-label="<%= l(:field_subject) %>">
+    <div class="tp-add-row">
+      <select name="project_id" class="tp-add-project" aria-label="<%= l(:label_project) %>">
+        <% projects.each do |project| %><option value="<%= project.id %>"><%= project.self_and_ancestors.map(&:name).join(' » ') %></option><% end %>
+      </select>
+      <button type="submit" class="tp-btn tp-btn-primary tp-btn-sm"><%= l(:button_create) %></button>
+      <button type="button" class="tp-btn tp-btn-ghost tp-btn-sm" data-tp-add-close><%= l(:label_team_planning_finish) %></button>
+    </div>
+    <p class="tp-hint"><%= l(:text_team_planning_add_hint) %></p>
+  </form>
+</template>
+<script type="application/json" id="tp-i18n"><%= raw({
+  undo: l(:button_team_planning_undo),
+  hoursTitle: l(:label_team_planning_plan_hours),
+  hoursHint: l(:text_team_planning_hours_hint),
+  hoursNone: l(:label_team_planning_no_hours),
+  hoursOther: l(:label_team_planning_other_hours),
+  set: l(:button_team_planning_set),
+  day: l(:label_team_planning_one_day),
+  moveTo: l(:label_team_planning_move_to),
+  makeStanding: l(:label_team_planning_make_standing),
+  endStanding: l(:label_team_planning_end_standing),
+  normalTask: l(:label_team_planning_normal_task),
+  makeLong: l(:label_team_planning_make_long),
+  noLong: l(:label_team_planning_no_long),
+  longTitle: l(:label_team_planning_long),
+  longHint: l(:text_team_planning_long_hint),
+  until: l(:label_team_planning_until_week),
+  open: l(:label_team_planning_open_end),
+  toPool: l(:label_team_planning_to_pool),
+  carryTitle: l(:label_team_planning_carry_title),
+  carryLong: l(:label_team_planning_carry_long),
+  carryKeep: l(:label_team_planning_carry_keep),
+  doneTitle: l(:label_team_planning_done_title),
+  doneOnly: l(:label_team_planning_done_only),
+  enter: l(:label_team_planning_enter),
+  withComment: l(:label_team_planning_with_comment),
+  status: l(:field_status),
+  absenceTitle: l(:label_team_planning_absence),
+  absenceHint: l(:text_team_planning_absence_hint),
+  none: l(:label_none),
+  whole: l(:label_team_planning_whole),
+  days: l(:label_team_planning_days_short),
+  settingsTitle: l(:label_team_planning_settings),
+  periodLength: l(:label_team_planning_period_length_field),
+  weekOne: l(:label_team_planning_period_length, count: 1),
+  weeksMany: l(:label_team_planning_period_length, count: 2),
+  limitLabel: l(:label_team_planning_limit),
+  limitHint: l(:text_team_planning_limit_hint),
+  save: l(:button_save),
+  readonly: l(:text_team_planning_readonly),
+  error: l(:error_team_planning_generic)
+}.to_json) %></script>

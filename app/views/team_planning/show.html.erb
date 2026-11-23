@@ -1,0 +1,31 @@
+<% html_title l(:label_team_planning) %>
+<% current = @planner.current_period %>
+<div class="contextual tp-tools">
+  <%= team_planning_person_select(@user, controller: 'team_planning', action: 'show') %>
+  <% if @planner.editable? %>
+    <button type="button" class="tp-btn" data-tp-popover="settings" aria-haspopup="true"><%= sprite_icon('settings', l(:label_team_planning_settings)) %></button>
+    <%= link_to l(:button_team_planning_close_period, period: current.label), team_planning_close_path(team_planning_user_param(@user)), class: 'tp-btn tp-btn-primary' %>
+  <% end %>
+</div>
+
+<h2><%= l(:label_team_planning) %></h2>
+<p class="tp-sub">
+  <%= @user.name %> ·
+  <%= l(:label_team_planning_period_length, count: @planner.weeks) %> ·
+  <%= l(:label_team_planning_running, period: current.label, range: current.range_label) %>
+</p>
+
+<% unless @planner.own? %>
+  <p class="tp-banner">
+    <%= @planner.editable? ? l(:text_team_planning_editing_other, name: @user.firstname) : l(:text_team_planning_viewing_other, name: @user.firstname) %>
+  </p>
+<% end %>
+
+<div id="team-planning-board"
+     data-board-url="<%= team_planning_path(team_planning_user_param(@user).merge(partial: 'board')) %>"
+     data-settings-url="<%= team_planning_settings_path(team_planning_user_param(@user)) %>"
+     data-weeks="<%= @planner.weeks %>" data-limit="<%= @planner.limit %>">
+  <%= render partial: 'team_planning/board', locals: { planner: @planner } %>
+</div>
+
+<%= render partial: 'team_planning/templates' %>

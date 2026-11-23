@@ -1,0 +1,7 @@
+{
+  "name": "redmine-team-planning-dev",
+  "private": true,
+  "description": "Nur für dev/check-ui.mjs (Browser-Durchlauf)",
+  "scripts": { "check:ui": "dev/check-ui.sh" },
+  "devDependencies": { "playwright": "1.65.1" }
+}

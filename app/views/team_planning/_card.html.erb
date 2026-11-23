@@ -1,0 +1,51 @@
+<%
+  done = item ? planner.done?(item) : planner.done_status_ids.include?(issue.status_id)
+  carries = item && !item.long? ? planner.carries(issue) : 0
+  unacknowledged = carries - (item&.carry_ack || 0)
+  booked = period ? planner.booked_for(issue, period) : 0
+  hours_text = if period && (booked.positive? || item&.planned_hours)
+                 "#{format('%g', booked.round(2)).tr('.', ',')}#{" / #{format('%g', item.planned_hours.to_f).tr('.', ',')}" if item&.planned_hours} h"
+               elsif item&.planned_hours
+                 l(:label_team_planning_planned, hours: format_hours(item.planned_hours))
+               end
+%>
+<% if location == 'standing' %>
+  <article class="tp-card is-slim" data-issue-id="<%= issue.id %>" data-location="standing" data-project-id="<%= issue.project_id %>"
+           data-subject="<%= issue.subject.downcase %>" tabindex="0" aria-label="<%= l(:label_team_planning_standing) %>: <%= issue.subject %>">
+    <%= team_planning_project_mark(issue.project) %>
+    <%= link_to issue.subject, issue_path(issue), class: 'tp-slim-title', draggable: false %>
+    <% if period %><span class="tp-slim-h tp-num"><%= format_hours(booked) %></span><% end %>
+    <button type="button" class="tp-icon-btn tp-menu-btn" data-tp-menu aria-label="<%= l(:label_team_planning_actions, issue: "##{issue.id}") %>">⋯</button>
+  </article>
+<% else %>
+  <article class="tp-card<%= ' is-done' if done %>" data-issue-id="<%= issue.id %>" data-location="<%= location %>"
+           data-project-id="<%= issue.project_id %>" data-subject="<%= issue.subject.downcase %> #<%= issue.id %>"
+           data-kind="<%= item&.kind || 'normal' %>" data-until="<%= item&.until_on&.iso8601 %>"
+           data-planned="<%= item&.planned_hours&.to_f %>" data-assigned="<%= issue.assigned_to_id.present? %>"
+           tabindex="0" aria-label="<%= issue.subject %>">
+    <div class="tp-card-top">
+      <%= team_planning_project_mark(issue.project) %>
+      <span class="tp-proj"><%= issue.project.name %></span>
+      <%= link_to "##{issue.id}", issue_path(issue), class: 'tp-num', draggable: false %>
+    </div>
+    <div class="tp-card-main">
+      <% if period && item %>
+        <button type="button" class="tp-check" data-tp-check aria-pressed="<%= done %>" aria-label="<%= l(:label_team_planning_done) %>"><%= '✓' if done %></button>
+      <% end %>
+      <%= link_to issue.subject, issue_path(issue), class: 'tp-card-title', draggable: false %>
+      <button type="button" class="tp-icon-btn tp-menu-btn" data-tp-menu aria-label="<%= l(:label_team_planning_actions, issue: "##{issue.id}") %>">⋯</button>
+    </div>
+    <div class="tp-card-meta">
+      <span class="tp-pill <%= team_planning_status_class(issue, planner) %>"><%= issue.status.name %></span>
+      <% if item&.done && !planner.done_status_ids.include?(issue.status_id) %><span class="tp-pill is-done"><%= l(:label_team_planning_done) %></span><% end %>
+      <% if item&.long? %><span class="tp-pill is-kind"><%= item.until_on ? l(:label_team_planning_long_until, week: item.until_on.cweek) : l(:label_team_planning_long) %></span><% end %>
+      <% if unacknowledged >= 3 && !done %><button type="button" class="tp-pill is-warn" data-tp-carry data-carries="<%= carries %>"><%= l(:label_team_planning_carried_times, count: carries) %></button><% end %>
+      <% if issue.priority && issue.priority.position > (IssuePriority.default&.position || 0) %><span class="tp-pill is-prio"><%= issue.priority.name %></span><% end %>
+      <% if item&.origin == 'unplanned' && period %><span class="tp-pill"><%= l(:label_team_planning_unplanned) %></span><% end %>
+      <% if item && issue.assigned_to_id != planner.user.id && issue.assigned_to %><span class="tp-pill is-kind"><%= l(:label_team_planning_with, name: issue.assigned_to.name) %></span><% end %>
+      <% if item %>
+        <button type="button" class="tp-hours tp-num<%= ' is-empty' unless hours_text %>" data-tp-hours><%= hours_text || l(:label_team_planning_hours) %></button>
+      <% end %>
+    </div>
+  </article>
+<% end %>

@@ -1,0 +1,155 @@
+<%
+  user = planner.user
+  up = team_planning_user_param(user)
+  editable = planner.editable?
+  periods = planner.periods
+  standings = planner.standings
+  backlog = planner.backlog
+  pool = planner.pool
+  past = planner.past_period
+  projects = Project.visible.where(id: (backlog + pool).map(&:project_id)).sorted
+%>
+<div class="tp-board<%= ' is-readonly' unless editable %>"
+     data-editable="<%= editable %>"
+     data-move-url="<%= team_planning_move_path(0, up) %>"
+     data-item-url="<%= team_planning_item_path(0, up) %>"
+     data-done-options-url="<%= team_planning_done_options_path(0, up) %>"
+     data-complete-url="<%= team_planning_complete_path(0, up) %>"
+     data-reopen-url="<%= team_planning_reopen_path(0, up) %>"
+     data-unassign-url="<%= team_planning_unassign_path(0, up) %>"
+     data-end-standing-url="<%= team_planning_end_standing_path(0, up) %>"
+     data-current="<%= periods.first.starts_on.iso8601 %>"
+     data-futures="<%= periods.drop(1).map { |p| [p.last_workday - 4, p.label] }.to_json %>"
+     data-create-url="<%= team_planning_issues_path(up) %>"
+     data-locations="<%= ([['backlog', l(:label_team_planning_backlog)]] + periods.map { |p| [p.starts_on.iso8601, p.label] } + [['later', l(:label_team_planning_later)], ['standing', l(:label_team_planning_standing)]]).to_json %>">
+
+  <%# Backlog: meine Tickets oder Pool (niemandem zugewiesen) %>
+  <section class="tp-col is-backlog" aria-label="<%= l(:label_team_planning_backlog) %>">
+    <header class="tp-col-head">
+      <div class="tp-col-title">
+        <strong><%= l(:label_team_planning_backlog) %></strong>
+        <span class="tp-seg" role="group" aria-label="<%= l(:label_team_planning_backlog) %>">
+          <button type="button" data-tp-backlog="backlog" aria-pressed="true"><%= planner.own? ? l(:label_team_planning_mine) : l(:label_team_planning_assigned) %> <span class="tp-num"><%= backlog.size %></span></button>
+          <button type="button" data-tp-backlog="pool" aria-pressed="false"><%= l(:label_team_planning_pool) %> <span class="tp-num"><%= pool.size %></span></button>
+        </span>
+      </div>
+      <p class="tp-col-sub tp-pool-hint" hidden><%= l(:text_team_planning_pool_hint, name: planner.own? ? l(:label_team_planning_you) : user.name, months: RedmineTeamPlanning::Settings.pool_months) %></p>
+      <div class="tp-filter">
+        <input type="search" class="tp-filter-text" placeholder="<%= l(:label_search) %>" aria-label="<%= l(:label_search) %>">
+        <select class="tp-filter-project" aria-label="<%= l(:label_project) %>">
+          <option value=""><%= l(:label_team_planning_all_projects) %></option>
+          <% projects.each do |project| %><option value="<%= project.id %>"><%= project.name %></option><% end %>
+        </select>
+      </div>
+    </header>
+    <div class="tp-cards" data-location="backlog">
+      <% backlog.each do |issue| %><%= render partial: 'team_planning/card', locals: { planner: planner, issue: issue, item: nil, location: 'backlog', period: nil } %><% end %>
+    </div>
+    <div class="tp-cards" data-location="pool" hidden>
+      <% pool.each do |issue| %><%= render partial: 'team_planning/card', locals: { planner: planner, issue: issue, item: nil, location: 'pool', period: nil } %><% end %>
+    </div>
+    <%= render partial: 'team_planning/add', locals: { location: 'backlog', editable: editable } %>
+  </section>
+
+  <%# Zuletzt abgeschlossener Zeitraum, nur lesen %>
+  <% if past %>
+    <section class="tp-col is-past is-folded" aria-label="<%= past.label %>">
+      <button type="button" class="tp-past-fold" data-tp-past aria-expanded="false">
+        <strong><%= past.label %></strong>
+        <span class="tp-col-sub"><%= l(:label_team_planning_closed) %></span>
+        <span class="tp-col-sub tp-num"><%= l(:label_team_planning_done_count, count: past.items.where(result: 'done').count) %></span>
+        <span class="tp-col-sub tp-num"><%= format_hours(planner.booked_hours(past)) %></span>
+      </button>
+      <div class="tp-past-body">
+        <header class="tp-col-head">
+          <div class="tp-col-title"><strong><%= past.label %></strong><button type="button" class="tp-icon-btn" data-tp-past aria-label="<%= l(:button_collapse_all) %>">‹</button></div>
+          <div class="tp-col-sub"><%= past.range_label %> · <%= l(:label_team_planning_closed) %></div>
+        </header>
+        <div class="tp-past-rows">
+          <% planner.items(past).each do |item| %>
+            <div class="tp-past-row">
+              <%= team_planning_project_mark(item.issue.project) %>
+              <%= link_to item.issue.subject, issue_path(item.issue), class: 'tp-slim-title' %>
+              <span class="tp-pill tp-result-<%= item.result %>"><%= team_planning_result_label(item.result) %></span>
+              <span class="tp-slim-h tp-num"><%= format_hours(planner.booked_for(item.issue, past)) %></span>
+            </div>
+          <% end %>
+        </div>
+        <% if past.focus.present? %><p class="tp-past-note"><span class="tp-hint"><%= l(:label_team_planning_focus_was) %></span><br><%= past.focus %></p><% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <% periods.each_with_index do |period, index| %>
+    <%
+      items = planner.items(period)
+      limit = planner.effective_limit(period)
+      done_count = items.count { |i| planner.done?(i) }
+      over = items.size > limit
+      planned = items.sum { |i| i.planned_hours.to_f }
+      current = index.zero?
+    %>
+    <section class="tp-col<%= ' is-current' if current %><%= ' is-over' if over %>" aria-label="<%= period.label %>">
+      <header class="tp-col-head">
+        <div class="tp-col-title">
+          <strong><%= period.label %></strong>
+          <% if current %><span class="tp-tag"><%= l(:label_team_planning_this_period) %></span><% end %>
+        </div>
+        <div class="tp-col-sub tp-col-sub-row">
+          <span><%= period.range_label %></span>
+          <button type="button" class="tp-absence<%= ' has' if period.absence_days.positive? %>" data-tp-absence="<%= period.starts_on.iso8601 %>"
+                  data-days="<%= period.absence_days %>" data-workdays="<%= period.workdays %>"
+                  data-url="<%= team_planning_absence_path(period.starts_on.iso8601, up) %>"<%= ' disabled' unless editable %>>
+            <%= period.absence_days.positive? ? l(:label_team_planning_absent, count: period.absence_days) : l(:label_team_planning_absence) %>
+          </button>
+        </div>
+        <div class="tp-meter" title="<%= l(:label_team_planning_of_limit, count: items.size, limit: limit) %>">
+          <span class="tp-meter-plan" style="width: <%= limit.positive? ? [items.size * 100 / limit, 100].min : (items.any? ? 100 : 0) %>%"></span>
+          <span class="tp-meter-done" style="width: <%= limit.positive? ? [done_count * 100 / limit, 100].min : 0 %>%"></span>
+        </div>
+        <div class="tp-col-stats tp-num">
+          <span class="tp-col-count"><%= l(:label_team_planning_of_limit, count: items.size, limit: limit) %><%= " · #{l(:label_team_planning_overfull)}" if over %></span>
+          <% if current %>
+            <span><%= l(:label_team_planning_done_count, count: done_count) %></span>
+            <% outside = planner.booked_outside(period) %>
+            <span title="<%= l(:text_team_planning_booked_hint, name: user.name, range: period.range_label) %>"><%= l(:label_team_planning_booked, hours: format_hours(planner.booked_hours(period))) %><%= ", #{l(:label_team_planning_outside, hours: format_hours(outside))}" if outside.positive? %></span>
+          <% end %>
+          <% if planned.positive? %><span><%= l(:label_team_planning_planned, hours: format_hours(planned)) %></span><% end %>
+          <% hidden = planner.hidden_count(period) %>
+          <% if hidden.positive? %><span><%= l(:label_team_planning_hidden, count: hidden) %></span><% end %>
+        </div>
+      </header>
+
+      <div class="tp-standing">
+        <div class="tp-standing-head"><span><%= l(:label_team_planning_standing_plural) %></span><span class="tp-hint"><%= l(:text_team_planning_standing_hint) %></span></div>
+        <div class="tp-cards tp-standing-cards" data-location="standing">
+          <% standings.each do |standing| %>
+            <%= render partial: 'team_planning/card', locals: { planner: planner, issue: standing.issue, item: nil, location: 'standing', period: (current ? period : nil) } %>
+          <% end %>
+        </div>
+        <% if standings.empty? %><p class="tp-standing-empty"><%= l(:text_team_planning_standing_empty) %></p><% end %>
+      </div>
+
+      <div class="tp-cards" data-location="<%= period.starts_on.iso8601 %>">
+        <% items.each do |item| %>
+          <%= render partial: 'team_planning/card', locals: { planner: planner, issue: item.issue, item: item, location: period.starts_on.iso8601, period: current ? period : nil } %>
+        <% end %>
+      </div>
+      <%= render partial: 'team_planning/add', locals: { location: period.starts_on.iso8601, editable: editable } %>
+    </section>
+  <% end %>
+
+  <% later = planner.later_items %>
+  <section class="tp-col" aria-label="<%= l(:label_team_planning_later) %>">
+    <header class="tp-col-head">
+      <div class="tp-col-title"><strong><%= l(:label_team_planning_later) %></strong><span class="tp-col-sub"><%= later.size %></span></div>
+      <div class="tp-col-sub"><%= l(:text_team_planning_later_hint) %></div>
+    </header>
+    <div class="tp-cards" data-location="later">
+      <% later.each do |entry| %>
+        <%= render partial: 'team_planning/card', locals: { planner: planner, issue: entry.issue, item: nil, location: 'later', period: nil } %>
+      <% end %>
+    </div>
+    <%= render partial: 'team_planning/add', locals: { location: 'later', editable: editable } %>
+  </section>
+</div>
