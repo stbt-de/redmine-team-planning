@@ -6,7 +6,9 @@
   standings = planner.standings
   backlog = planner.backlog
   pool = planner.pool
-  past = planner.past_period
+  past = local_assigns[:past] || planner.past_period
+  older = past && planner.older_closed_period(past)
+  newer = past && planner.newer_closed_period(past)
   projects = Project.visible.where(id: (backlog + pool).map(&:project_id)).sorted
 %>
 <div class="tp-board<%= ' is-readonly' unless editable %>"
@@ -51,9 +53,9 @@
     <%= render partial: 'team_planning/add', locals: { location: 'backlog', editable: editable } %>
   </section>
 
-  <%# Zuletzt abgeschlossener Zeitraum, nur lesen %>
+  <%# Abgeschlossener Zeitraum (zuletzt oder geblättert), nur lesen %>
   <% if past %>
-    <section class="tp-col is-past is-folded" aria-label="<%= past.label %>">
+    <section class="tp-col is-past is-folded" aria-label="<%= past.label %>" data-past-on="<%= past.starts_on.iso8601 %>">
       <button type="button" class="tp-past-fold" data-tp-past aria-expanded="false">
         <strong><%= past.label %></strong>
         <span class="tp-col-sub"><%= l(:label_team_planning_closed) %></span>
@@ -62,8 +64,12 @@
       </button>
       <div class="tp-past-body">
         <header class="tp-col-head">
-          <div class="tp-col-title"><strong><%= past.label %></strong><button type="button" class="tp-icon-btn" data-tp-past aria-label="<%= l(:button_collapse_all) %>">‹</button></div>
+          <div class="tp-col-title"><strong><%= past.label %></strong><button type="button" class="tp-icon-btn" data-tp-past aria-label="<%= l(:button_collapse_all) %>">«</button></div>
           <div class="tp-col-sub"><%= past.range_label %> · <%= l(:label_team_planning_closed) %></div>
+          <div class="tp-past-nav">
+            <% if older %><button type="button" class="tp-link-btn" data-tp-past-nav="<%= older.starts_on.iso8601 %>" aria-label="<%= l(:label_team_planning_previous_period) %>">‹ <%= older.label %></button><% else %><span></span><% end %>
+            <% if newer %><button type="button" class="tp-link-btn" data-tp-past-nav="<%= newer.starts_on.iso8601 %>" aria-label="<%= l(:label_team_planning_next_period) %>"><%= newer.label %> ›</button><% end %>
+          </div>
         </header>
         <div class="tp-past-rows">
           <% planner.items(past).each do |item| %>
@@ -76,6 +82,7 @@
           <% end %>
         </div>
         <% if past.focus.present? %><p class="tp-past-note"><span class="tp-hint"><%= l(:label_team_planning_focus_was) %></span><br><%= past.focus %></p><% end %>
+        <p class="tp-past-note"><%= link_to l(:button_team_planning_period_details), team_planning_period_path(past.starts_on.iso8601, up) %></p>
       </div>
     </section>
   <% end %>

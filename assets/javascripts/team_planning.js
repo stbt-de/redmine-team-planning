@@ -105,7 +105,7 @@
 
   // --- Board -------------------------------------------------------------------
 
-  var boardState = { backlog: 'backlog', filterText: '', filterProject: '', pastOpen: false, addOpen: null };
+  var boardState = { backlog: 'backlog', filterText: '', filterProject: '', pastOpen: false, pastOn: null, addOpen: null };
 
   function board() { return $('.tp-board'); }
   function editable() { var b = board(); return b && b.dataset.editable === 'true'; }
@@ -116,7 +116,9 @@
     var scroll = board() ? board().scrollLeft : 0;
     var lists = {};
     $$('.tp-cards', container).forEach(function (list) { lists[list.dataset.location] = list.scrollTop; });
-    return fetch(container.dataset.boardUrl, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    var url = container.dataset.boardUrl;
+    if (boardState.pastOn) url += (url.indexOf('?') < 0 ? '?' : '&') + 'past=' + encodeURIComponent(boardState.pastOn);
+    return fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
       .then(function (response) { return response.text(); })
       .then(function (html) {
         container.innerHTML = html;
@@ -594,6 +596,11 @@
     if ((target = event.target.closest('[data-tp-backlog]'))) {
       boardState.backlog = target.dataset.tpBacklog;
       applyBoardState();
+    } else if ((target = event.target.closest('[data-tp-past-nav]'))) {
+      // Durch frühere Zeiträume blättern
+      boardState.pastOn = target.dataset.tpPastNav;
+      boardState.pastOpen = true;
+      reloadBoard();
     } else if ((target = event.target.closest('[data-tp-past]'))) {
       boardState.pastOpen = !boardState.pastOpen;
       applyBoardState();
@@ -731,9 +738,21 @@
 
   // --- Start -------------------------------------------------------------------
 
+  // Einstellungen: Status-Auswahl nur bei "selbst wählen" bearbeitbar
+  function initStatusMode() {
+    var box = $('[data-tp-status-mode]');
+    if (!box) return;
+    box.addEventListener('change', function (event) {
+      if (event.target.name !== 'settings[done_status_mode]') return;
+      var custom = event.target.value === 'custom';
+      $$('.tp-status-list input', box).forEach(function (input) { input.disabled = !custom; });
+    });
+  }
+
   function init() {
     loadTexts();
     showStoredToast();
+    initStatusMode();
     $$('select[data-navigate]').forEach(function (select) {
       select.addEventListener('change', function () { window.location.href = select.value; });
     });

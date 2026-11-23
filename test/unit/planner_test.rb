@@ -57,6 +57,21 @@ class PlannerTest < ActiveSupport::TestCase
     assert_not_includes @planner.pool.map(&:id), old.id
   end
 
+  # Regression: Pool (und Backlog) zeigten Tickets aus geschlossenen Projekten.
+  # Issue.visible schließt nur archivierte Projekte aus; geschlossene sind
+  # sichtbar, aber schreibgeschützt – einplanen/zuweisen geht dort nicht.
+  def test_pool_und_backlog_ohne_tickets_aus_geschlossenen_projekten
+    unassigned = create_issue(assigned_to: nil)
+    mine = create_issue(assigned_to: @jsmith)
+    assert_includes @planner.pool.map(&:id), unassigned.id
+    assert_includes @planner.backlog.map(&:id), mine.id
+
+    @project.update_column(:status, Project::STATUS_CLOSED)
+    planner = planner_for(@jsmith)
+    assert_not_includes planner.pool.map(&:id), unassigned.id, 'Pool zeigt Ticket aus geschlossenem Projekt'
+    assert_not_includes planner.backlog.map(&:id), mine.id, 'Backlog zeigt Ticket aus geschlossenem Projekt'
+  end
+
   def test_ungeplant_wenn_der_laufende_zeitraum_schon_begonnen_hat
     issue = create_issue(assigned_to: @jsmith)
     @planner.move(issue, to: MONDAY.iso8601)

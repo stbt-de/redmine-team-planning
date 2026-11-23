@@ -1,0 +1,105 @@
+<%# Ein abgeschlossener Zeitraum: Bilanz, Tickets, Rückblick, Notizen der Teamrunde %>
+<% period = @period %>
+<% up = team_planning_user_param(@user) %>
+<% items = @planner.items(period) %>
+<% hidden = @planner.hidden_count(period) %>
+<% by_result = items.group_by(&:result) %>
+<% unplanned = items.count { |i| i.origin == 'unplanned' } %>
+<% older = @planner.older_closed_period(period) %>
+<% newer = @planner.newer_closed_period(period) %>
+<% html_title "#{period.label} · #{@user.name}" %>
+
+<div class="contextual tp-tools">
+  <span class="tp-seg" role="group" aria-label="<%= l(:label_team_planning_periods) %>">
+    <% if older %><%= link_to "‹ #{older.label}", team_planning_period_path(older.starts_on.iso8601, up), class: 'tp-btn', 'aria-label': l(:label_team_planning_previous_period) %><% end %>
+    <% if newer %><%= link_to "#{newer.label} ›", team_planning_period_path(newer.starts_on.iso8601, up), class: 'tp-btn', 'aria-label': l(:label_team_planning_next_period) %><% end %>
+  </span>
+  <% if @planner.editable? && !@editing %><%= link_to l(:button_edit), team_planning_period_path(period.starts_on.iso8601, up.merge(edit: 1)), class: 'tp-btn' %><% end %>
+  <%= link_to l(:label_team_planning_all_periods), team_planning_periods_path(up), class: 'tp-btn' %>
+  <%= link_to l(:button_team_planning_open_board), team_planning_path(up), class: 'tp-btn' %>
+</div>
+
+<h2><%= period.label %></h2>
+<p class="tp-sub">
+  <%= @user.name %> · <%= period.range_label %>
+  · <%= l(:text_team_planning_closed_on, date: format_date(period.closed_at)) %>
+  <% if period.absence_days.positive? %> · <%= l(:label_team_planning_absent, count: period.absence_days) %><% end %>
+</p>
+
+<% if @editing %>
+  <p class="tp-info"><%= l(:text_team_planning_period_editing) %></p>
+  <%= form_tag(team_planning_period_path(period.starts_on.iso8601, up), method: :patch, class: 'tp-period-form') %>
+<% end %>
+<div class="tp-close-grid">
+  <section class="tp-panel">
+    <h3><%= l(:label_team_planning_balance) %></h3>
+    <div class="tp-stats">
+      <div class="tp-stat"><b><%= Array(by_result['done']).size %></b><span><%= l(:label_team_planning_stat_done) %><%= ", #{l(:label_team_planning_stat_unplanned, count: unplanned)}" if unplanned.positive? %></span></div>
+      <div class="tp-stat"><b><%= Array(by_result['carried']).size %></b><span><%= l(:label_team_planning_result_carried) %></span></div>
+      <div class="tp-stat"><b><%= Array(by_result['backlog']).size + Array(by_result['closed']).size %></b><span><%= l(:label_team_planning_stat_backlog_closed) %></span></div>
+      <div class="tp-stat"><b><%= format_hours(@planner.booked_hours(period)) %></b><span><%= l(:label_team_planning_stat_booked) %></span></div>
+    </div>
+    <p class="tp-hint"><%= l(:text_team_planning_booked_all, range: period.range_label) %>.</p>
+    <div class="tp-list">
+      <% items.each do |item| %>
+        <div class="tp-list-row">
+          <%= team_planning_project_mark(item.issue.project) %>
+          <span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small>#<%= item.issue.id %> · <%= item.issue.status.name %><%= " · #{l(:label_team_planning_unplanned)}" if item.origin == 'unplanned' %><%= " · #{l(:label_team_planning_long)}" if item.long? %></small></span>
+          <% if item.result %><span class="tp-pill tp-result-<%= item.result %>"><%= team_planning_result_label(item.result) %></span><% end %>
+          <span class="tp-num"><%= format_hours(@planner.booked_for(item.issue, period)) %></span>
+        </div>
+      <% end %>
+      <% if items.empty? %><p class="tp-hint"><%= l(:text_team_planning_period_empty) %></p><% end %>
+      <% if hidden.positive? %><p class="tp-hint"><%= l(:label_team_planning_hidden, count: hidden) %></p><% end %>
+    </div>
+  </section>
+
+  <div class="tp-stack">
+    <section class="tp-panel">
+      <h3><label for="period_focus"><%= l(:label_team_planning_focus) %></label></h3>
+      <% if @editing %>
+        <%= text_field_tag 'period[focus]', period.focus, id: 'period_focus', class: 'tp-wide-field', placeholder: l(:text_team_planning_focus_placeholder) %>
+      <% else %>
+        <p><%= period.focus.presence || content_tag(:span, '–', class: 'tp-hint') %></p>
+      <% end %>
+    </section>
+
+    <section class="tp-panel">
+      <h3><%= l(:label_team_planning_round_notes) %></h3>
+      <% rounds = @planner.round_notes(period) %>
+      <% rounds.each do |round| %>
+        <div class="tp-round-note">
+          <h4><label for="round_<%= round.id %>"><%= l(:label_team_planning_round_on, day: day_name(round.held_on.wday), date: format_date(round.held_on)) %></label></h4>
+          <% if @editing %>
+            <%= text_area_tag "rounds[#{round.id}]", round.notes, id: "round_#{round.id}", rows: 4, class: 'tp-wide-field' %>
+          <% else %>
+            <%= simple_format(h(round.notes)) %>
+          <% end %>
+        </div>
+      <% end %>
+      <% if rounds.empty? %><p class="tp-hint"><%= l(:text_team_planning_no_round_notes) %></p><% end %>
+    </section>
+  </div>
+</div>
+
+<section class="tp-panel">
+  <h3><%= l(:label_team_planning_review) %></h3>
+  <div class="tp-review-cols">
+    <% { review_good: :label_team_planning_review_good, review_bad: :label_team_planning_review_bad, review_change: :label_team_planning_review_change }.each do |field, label| %>
+      <% if @editing %>
+        <div><h4><label for="period_<%= field %>"><%= l(label) %></label></h4><%= text_area_tag "period[#{field}]", period.send(field), id: "period_#{field}", rows: 5, class: 'tp-wide-field' %></div>
+      <% else %>
+        <div><h4><%= l(label) %></h4><%= period.send(field).present? ? simple_format(h(period.send(field))) : content_tag(:p, '–', class: 'tp-hint') %></div>
+      <% end %>
+    <% end %>
+  </div>
+  <% if @editing %><p class="tp-hint"><%= l(:text_team_planning_review_hint) %></p><% end %>
+</section>
+
+<% if @editing %>
+  <p class="tp-close-actions">
+    <%= link_to l(:button_cancel), team_planning_period_path(period.starts_on.iso8601, up), class: 'tp-btn' %>
+    <%= submit_tag l(:button_save), class: 'tp-btn tp-btn-primary', name: nil %>
+  </p>
+  </form>
+<% end %>

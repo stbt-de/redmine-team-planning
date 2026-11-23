@@ -25,7 +25,10 @@ module RedmineTeamPlanning
       'tracker_id' => ''
     }.freeze
 
-    DEFAULT_DONE_STATUS_NAMES = ['Resolved', 'For Billing'].freeze
+    # Offene Status, die ohne eigene Auswahl als erledigt zählen. Verglichen
+    # wird ohne Emoji, Satzzeichen und Groß-/Kleinschreibung, also zählt
+    # auch "✅ Resolved" oder "💰 For Billing".
+    DEFAULT_DONE_STATUS_NAMES = ['Resolved', 'For Billing', 'Gelöst', 'Zur Abrechnung'].freeze
     REMINDER_TIMES = { 'eve16' => [-1, 16], 'eve9' => [-1, 9], 'day8' => [0, 8] }.freeze
 
     module_function
@@ -42,11 +45,29 @@ module RedmineTeamPlanning
       self[key].to_s == '1'
     end
 
+    # Eigene Auswahl aus den Einstellungen, sonst die Vorgabe
     def done_status_ids
-      ids = Array(self['done_status_ids']).reject(&:blank?).map(&:to_i)
-      return ids if ids.any?
+      done_statuses_customized? ? selected_done_status_ids : default_done_status_ids
+    end
 
-      IssueStatus.where(is_closed: true).or(IssueStatus.where(name: DEFAULT_DONE_STATUS_NAMES)).pluck(:id)
+    # "auto" oder "custom"; ohne gespeicherten Modus zählt eine vorhandene Auswahl
+    def done_statuses_customized?
+      self['done_status_mode'].to_s != 'auto' && selected_done_status_ids.any?
+    end
+
+    # Alle geschlossenen Status plus die offenen mit einem der Vorgabe-Namen
+    def default_done_status_ids
+      names = DEFAULT_DONE_STATUS_NAMES.map { |name| normalize_status_name(name) }
+      IssueStatus.all.select { |status| status.is_closed? || names.include?(normalize_status_name(status.name)) }.map(&:id)
+    end
+
+    def selected_done_status_ids
+      Array(self['done_status_ids']).reject(&:blank?).map(&:to_i)
+    end
+
+    # "✅ Resolved" → "resolved", "💰 For Billing" → "for billing"
+    def normalize_status_name(name)
+      name.to_s.gsub(/[^\p{L}\p{N}]+/, ' ').strip.downcase
     end
 
     # Abschluss-Aktionen als Liste von Hashes (das Formular liefert einen

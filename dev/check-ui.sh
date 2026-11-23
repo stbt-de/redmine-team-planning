@@ -31,6 +31,14 @@ Role.givable.first.add_permission!(:edit_others_team_planning)
 member = User.active.where(admin: false).detect { |u| u.roles.none? { |r| r.has_permission?(:edit_others_team_planning) } }
 member.password = member.password_confirmation = "tp-check-1234"; member.save!
 File.write("/tmp/tp-check-user", member.login)
+# Ein offenes, nicht zugewiesenes Ticket in einem aktiven Projekt für den Pool
+project = Project.where(status: Project::STATUS_ACTIVE).detect { |p| p.trackers.any? }
+Issue.create!(project: project, tracker: project.trackers.first, author: User.find(1), subject: "Pool-Ticket für check-ui",
+              status: IssueStatus.where(is_closed: false).sorted.first, priority: IssuePriority.default || IssuePriority.first)
+# Ein älterer abgeschlossener Zeitraum zum Blättern im Board
+TeamPlanningPeriod.find_or_create_by!(user_id: 1, starts_on: Date.new(2025, 1, 6)) do |p|
+  p.weeks = 1; p.closed_at = Time.current; p.review_good = "check-ui Rückblick alt"
+end
 closed = IssueStatus.where(is_closed: true).sorted.first
 open_last = IssueStatus.where(is_closed: false).sorted.last
 Setting.plugin_redmine_team_planning = RedmineTeamPlanning::Settings::DEFAULTS.merge("done_actions" => [

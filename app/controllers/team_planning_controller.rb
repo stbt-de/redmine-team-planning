@@ -12,7 +12,44 @@ class TeamPlanningController < ApplicationController
 
   def show
     @planner = RedmineTeamPlanning::Planner.new(@user)
-    return render(partial: 'team_planning/board', locals: { planner: @planner }) if params[:partial] == 'board'
+    # Im Board durch frühere Zeiträume blättern: ?past=YYYY-MM-DD
+    @past = @planner.closed_period(params[:past]) if params[:past].present?
+    return render(partial: 'team_planning/board', locals: { planner: @planner, past: @past }) if params[:partial] == 'board'
+  end
+
+  # Alle abgeschlossenen Zeiträume einer Person
+  def periods
+    @planner = RedmineTeamPlanning::Planner.new(@user)
+    @periods = @planner.closed_periods.includes(:items).to_a
+  end
+
+  # Ein abgeschlossener Zeitraum: Bilanz, Tickets, Rückblick, Notizen der Runde
+  def period
+    @planner = RedmineTeamPlanning::Planner.new(@user)
+    @period = @planner.closed_period(params[:starts_on])
+    return render_404 unless @period
+
+    @editing = params[:edit].present? && @planner.editable?
+  end
+
+  # Nachträglich ändern: Rückblick, Fokus und Notizen der Teamrunden im Zeitraum
+  def update_period
+    @planner = RedmineTeamPlanning::Planner.new(@user)
+    @period = @planner.closed_period(params[:starts_on])
+    return render_404 unless @period
+    return deny_access unless @planner.editable?
+
+    review = params.fetch(:period, {}).permit(:review_good, :review_bad, :review_change, :focus).to_h
+    TeamPlanningPeriod.transaction do
+      @period.update!(review.transform_values(&:presence))
+      notes = params.fetch(:rounds, {}).permit!.to_h
+      @planner.round_notes(@period).where(id: notes.keys.map(&:to_i)).each do |round|
+        round.update!(notes: notes[round.id.to_s].to_s)
+      end
+    end
+    notify_owner(l(:text_team_planning_change_review, period: @period.label)) unless @user == User.current
+    flash[:notice] = l(:notice_successful_update)
+    redirect_to team_planning_period_path(@period.starts_on.iso8601, user_param)
   end
 
   def close

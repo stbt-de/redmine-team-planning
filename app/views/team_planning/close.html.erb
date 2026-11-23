@@ -98,7 +98,7 @@
 
 <% history = TeamPlanningPeriod.where(user_id: @user.id).closed.order(starts_on: :desc).limit(12) %>
 <section class="tp-panel">
-  <div class="tp-panel-head"><h3><%= l(:label_team_planning_earlier_reviews) %></h3></div>
+  <div class="tp-panel-head"><h3><%= l(:label_team_planning_earlier_reviews) %></h3><% if history.any? %><%= link_to l(:label_team_planning_all_periods), team_planning_periods_path(team_planning_user_param(@user)) %><% end %></div>
   <% history.each_with_index do |past, index| %>
     <details class="tp-review"<%= ' open' if index.zero? %>>
       <summary><%= past.label %> · <%= l(:label_team_planning_done_count, count: past.items.where(result: 'done').count) %> · <%= format_hours(@planner.booked_hours(past)) %></summary>
@@ -107,6 +107,7 @@
           <div><h4><%= l(label) %></h4><%= past.send(field).present? ? simple_format(h(past.send(field))) : content_tag(:p, '–', class: 'tp-hint') %></div>
         <% end %>
       </div>
+      <p class="tp-review-more"><%= link_to l(:button_team_planning_period_details), team_planning_period_path(past.starts_on.iso8601, team_planning_user_param(@user)) %></p>
     </details>
   <% end %>
   <% if history.empty? %><p class="tp-hint"><%= l(:text_team_planning_no_reviews) %></p><% end %>

@@ -74,6 +74,16 @@ const log = (...a) => console.log(...a);
   log('6 absence:', (await nextCol.locator('.tp-col-count').innerText()), '|', await nextCol.locator('[data-tp-absence]').innerText());
   await nextCol.locator('[data-tp-add]').click(); await p.fill('.tp-add-title', 'E2E Aufgabe'); await p.keyboard.press('Enter'); await toast(); await idle();
   log('7 add:', await nextCol.locator('.tp-card', { hasText: 'E2E Aufgabe' }).count(), '| form open:', await nextCol.locator('.tp-add-form').count(), '| focus:', await p.evaluate(() => document.activeElement.className));
+  // Regression: mit langem Projektnamen wuchs das Formular-Grid auf die Breite
+  // der Auswahl, Eingabefeld und Auswahl ragten über die Spalte hinaus
+  const addOverflow = await nextCol.locator('.tp-add-form').evaluate((form) => {
+    const select = form.querySelector('.tp-add-project');
+    if (select) select.add(new Option('Ein sehr langer Projektname – Unterprojekt mit noch längerem Namen für den Test', '0'));
+    const right = form.getBoundingClientRect().right;
+    return [...form.querySelectorAll('input, select, button')].map((e) => Math.round(e.getBoundingClientRect().right - right)).filter((d) => d > 0);
+  });
+  log('7b add form overflow:', JSON.stringify(addOverflow));
+  expect(addOverflow.length === 0, 'Formular „Aufgabe hinzufügen“ ragt über die Spalte: ' + addOverflow);
   await p.keyboard.press('Escape');
   await p.click('[data-tp-backlog=pool]'); await idle();
   const poolCard = await p.locator('.tp-cards[data-location=pool] .tp-card').first().getAttribute('data-issue-id');
@@ -98,12 +108,27 @@ const log = (...a) => console.log(...a);
   log('10 closed:', await p.locator('.flash.notice, #flash_notice').innerText(), '| url', p.url());
   // Regression: in der eingeklappten Vorwoche (64 px) ragte "abgeschlossen" über den Rand
   const foldOverflow = await p.locator('.tp-col.is-past.is-folded').evaluate((col) => {
-    const right = col.getBoundingClientRect().right;
-    return [...col.querySelectorAll('.tp-past-fold > *')].map((e) => e.getBoundingClientRect().right - right).filter((d) => d > 0.5);
+    const box = col.getBoundingClientRect();
+    return [...col.querySelectorAll('.tp-past-fold > *')].flatMap((e) => {
+      const r = e.getBoundingClientRect();
+      return [r.right - box.right, box.left - r.left, r.bottom - box.bottom];
+    }).filter((d) => d > 0.5);
   });
   log('10b folded past overflow:', JSON.stringify(foldOverflow));
   expect(foldOverflow.length === 0, 'Text ragt aus der eingeklappten Vorwoche: ' + foldOverflow);
   await p.click('[data-tp-past]'); log('11 past rows:', await p.locator('.tp-past-row').count());
+  // Blättern zu einem älteren Zeitraum und Detailseite
+  const newest = await p.locator('.tp-col.is-past').getAttribute('data-past-on');
+  await p.click('[data-tp-past-nav]'); await p.waitForTimeout(800);
+  const older = await p.locator('.tp-col.is-past').getAttribute('data-past-on');
+  const stillOpen = !(await p.locator('.tp-col.is-past').getAttribute('class')).includes('is-folded');
+  log('11b past nav:', newest, '->', older, '| open', stillOpen);
+  expect(older && older !== newest && stillOpen, 'Blättern zu älterem Zeitraum: ' + newest + ' -> ' + older);
+  await p.click('.tp-col.is-past .tp-past-note a'); await p.waitForLoadState();
+  const detail = await p.locator('#content h2').innerText();
+  log('11c detail page:', detail, '|', await p.locator('.tp-review-cols').innerText().then((t) => t.slice(0, 60).replace(/\n/g, ' ')));
+  expect(/KW 2/.test(detail) && (await p.locator('.tp-review-cols', { hasText: 'check-ui Rückblick alt' }).count()) === 1, 'Detailseite: ' + detail);
+  await p.screenshot({ path: S + '/e2e-period.png', fullPage: true });
   // Teamrunde
   await p.goto(base + '/team_planning/team'); await p.fill('#tp-round-notes', 'E2E Notiz'); await p.waitForTimeout(1200);
   log('12 notes:', await p.locator('[data-tp-notes-state]').innerText(), '| persons', await p.locator('.tp-person').count());

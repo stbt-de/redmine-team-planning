@@ -1,0 +1,32 @@
+<%# Alle abgeschlossenen Zeiträume einer Person, neueste zuerst %>
+<% up = team_planning_user_param(@user) %>
+<% html_title "#{l(:label_team_planning_all_periods)} · #{@user.name}" %>
+
+<div class="contextual tp-tools">
+  <%= team_planning_person_select(@user, controller: 'team_planning', action: 'periods') %>
+  <%= link_to l(:button_team_planning_open_board), team_planning_path(up), class: 'tp-btn' %>
+</div>
+
+<h2><%= l(:label_team_planning_all_periods) %></h2>
+<p class="tp-sub"><%= @user.name %> · <%= l(:text_team_planning_periods_count, count: @periods.size) %></p>
+
+<section class="tp-panel">
+  <div class="tp-list">
+    <% @periods.each do |period| %>
+      <% done = period.items.count { |i| i.result == 'done' } %>
+      <% good = period.review_good.to_s.lines.map(&:strip).reject(&:blank?).first %>
+      <% bad = period.review_bad.to_s.lines.map(&:strip).reject(&:blank?).first %>
+      <div class="tp-list-row tp-period-row">
+        <span class="tp-t">
+          <%= link_to period.label, team_planning_period_path(period.starts_on.iso8601, up), class: 'tp-period-link' %>
+          <small><%= period.range_label %> · <%= l(:label_team_planning_done_count, count: done) %> · <%= format_hours(@planner.booked_hours(period)) %><%= " · #{l(:label_team_planning_focus)}: #{period.focus}" if period.focus.present? %></small>
+        </span>
+        <span class="tp-period-review">
+          <% if good %><span><span class="tp-hint"><%= l(:label_team_planning_review_good) %>:</span> <%= good %></span><% end %>
+          <% if bad %><span><span class="tp-hint"><%= l(:label_team_planning_review_bad) %>:</span> <%= bad %></span><% end %>
+        </span>
+      </div>
+    <% end %>
+    <% if @periods.empty? %><p class="tp-hint"><%= l(:text_team_planning_no_periods) %></p><% end %>
+  </div>
+</section>

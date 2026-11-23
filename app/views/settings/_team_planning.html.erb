@@ -28,10 +28,22 @@
   <p><label for="settings_comment_template"><%= l(:label_team_planning_comment_template) %></label>
     <%= text_field_tag 'settings[comment_template]', s['comment_template'], size: 60 %>
     <em class="info"><%= l(:text_team_planning_comment_placeholders) %></em></p>
-  <p><label for="settings_done_status_ids"><%= l(:label_team_planning_done_statuses) %></label>
-    <%= hidden_field_tag 'settings[done_status_ids][]', '' %>
-    <%= select_tag 'settings[done_status_ids]', options_from_collection_for_select(statuses, :id, :name, Array(s['done_status_ids']).map(&:to_i)), multiple: true, size: 6, name: 'settings[done_status_ids][]' %>
-    <em class="info"><%= l(:text_team_planning_done_statuses_hint, statuses: IssueStatus.where(id: s.done_status_ids).map(&:name).join(', ')) %></em></p>
+  <% customized = s.done_statuses_customized? %>
+  <% effective = s.done_status_ids %>
+  <div class="tp-status-setting" data-tp-status-mode>
+    <p><label><%= l(:label_team_planning_done_statuses) %></label>
+      <label class="tp-radio"><%= radio_button_tag 'settings[done_status_mode]', 'auto', !customized %> <%= l(:label_team_planning_done_statuses_auto) %></label>
+      <em class="info"><%= l(:text_team_planning_done_statuses_auto, names: s::DEFAULT_DONE_STATUS_NAMES.join(', ')) %>
+        <%= l(:text_team_planning_done_statuses_current, statuses: statuses.select { |st| s.default_done_status_ids.include?(st.id) }.map(&:name).join(', ')) %></em></p>
+    <p><label class="tp-radio"><%= radio_button_tag 'settings[done_status_mode]', 'custom', customized %> <%= l(:label_team_planning_done_statuses_custom) %></label>
+      <%= hidden_field_tag 'settings[done_status_ids][]', '', id: nil %>
+      <span class="tp-status-list">
+        <% statuses.each do |status| %>
+          <label class="tp-radio"><%= check_box_tag 'settings[done_status_ids][]', status.id, effective.include?(status.id), id: "settings_done_status_#{status.id}", disabled: !customized %>
+            <%= status.name %><% if status.is_closed? %> <span class="tp-hint">(<%= l(:label_team_planning_status_closed) %>)</span><% end %></label>
+        <% end %>
+      </span></p>
+  </div>
 </fieldset>
 
 <fieldset class="box tabular tp-settings">

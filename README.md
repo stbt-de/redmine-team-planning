@@ -27,6 +27,10 @@ with Redmine's permissions and workflows.
 - **Closing a period** – summary (done, continuing on purpose, to decide, hours logged),
   one decision per open issue (next period, backlog, close), a short review (went well,
   less well, what we change) and the focus for the next period. Under five minutes.
+- **Earlier periods** – step back through closed periods right on the board (‹ ›), or open
+  a period's page: summary, every issue with its result and hours, the focus, the review
+  (went well, less well, what we change) and the notes of the team meetings held in that
+  period. *Earlier periods* lists them all with the first lines of each review.
 - **Team meeting** – all plans by person or by project (customer), with who is prepared,
   the last review, focus, load and what to talk about; meeting notes for topics that
   belong to nobody; an email reminder the day before to everyone not prepared yet.
@@ -61,6 +65,10 @@ next periods.
 **Closing a period** – summary, one decision per open issue, review and focus.
 
 ![Closing a period](docs/screenshots/close.png)
+
+**Earlier period** – summary, issues with results, focus, meeting notes and review.
+
+![Closed period](docs/screenshots/period.png)
 
 **Team meeting** – by person and by project.
 
@@ -140,7 +148,10 @@ this first, because the completion actions refer to statuses and roles:
 - **Comment template** – placeholders `{zeitraum}` (period), `{stunden}` (hours logged),
   `{person}`, `{datum}`.
 - **Count as done** – statuses that tick an issue off automatically (e.g. when someone
-  closes it in Redmine). Empty: all closed statuses plus *Resolved* and *For Billing*.
+  closes it in Redmine), and that are left out of backlog and pool. *Automatic*: all
+  closed statuses plus *Resolved*, *For Billing*, *Gelöst* and *Zur Abrechnung* – names
+  are compared without emoji, punctuation and case, so "✅ Resolved" counts too. *Choose*:
+  tick the statuses yourself.
 - **Pool** – how many months back unassigned issues are offered.
 - **Tracker for new tasks** – used by *Add task* on the board (default: *To-Do* if the
   project has it, else its first tracker).

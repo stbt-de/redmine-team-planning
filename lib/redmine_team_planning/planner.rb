@@ -83,7 +83,33 @@ module RedmineTeamPlanning
     end
 
     def past_period
-      user_periods.closed.order(starts_on: :desc).first
+      closed_periods.first
+    end
+
+    # Abgeschlossene Zeiträume, neueste zuerst
+    def closed_periods
+      user_periods.closed.order(starts_on: :desc)
+    end
+
+    # Abgeschlossener Zeitraum nach Beginn ("YYYY-MM-DD"), nil wenn unbekannt
+    def closed_period(key)
+      date = key.is_a?(Date) ? key : Date.iso8601(key.to_s)
+      user_periods.closed.find_by(starts_on: date)
+    rescue Date::Error
+      nil
+    end
+
+    def older_closed_period(period)
+      user_periods.closed.where(starts_on: ...period.starts_on).order(starts_on: :desc).first
+    end
+
+    def newer_closed_period(period)
+      user_periods.closed.where('starts_on > ?', period.starts_on).order(:starts_on).first
+    end
+
+    # Notizen der Teamrunden, die in diesem Zeitraum stattfanden
+    def round_notes(period)
+      TeamPlanningRound.where(held_on: period.starts_on..period.ends_on).where.not(notes: [nil, '']).order(:held_on)
     end
 
     def effective_limit(period)
@@ -120,13 +146,13 @@ module RedmineTeamPlanning
     end
 
     def backlog
-      Issue.visible(viewer).open.where(assigned_to_id: user.id)
+      plannable_issues.where(assigned_to_id: user.id)
            .where.not(id: planned_issue_ids).where.not(status_id: done_status_ids)
            .includes(:status, :project, :priority).order(priority_id: :desc, id: :desc).limit(300).to_a
     end
 
     def pool
-      Issue.visible(viewer).open.where(assigned_to_id: nil)
+      plannable_issues.where(assigned_to_id: nil)
            .where(updated_on: Settings.pool_months.months.ago..)
            .where.not(status_id: done_status_ids)
            .includes(:status, :project, :priority).order(priority_id: :desc, updated_on: :desc).limit(300).to_a
@@ -294,6 +320,12 @@ module RedmineTeamPlanning
 
     def ensure_editable!
       raise Error, l(:error_team_planning_not_allowed) unless editable?
+    end
+
+    # Offene, sichtbare Tickets aus aktiven Projekten. Issue.visible lässt
+    # geschlossene Projekte drin; dort ist alles schreibgeschützt.
+    def plannable_issues
+      Issue.visible(viewer).open.joins(:project).where(projects: { status: Project::STATUS_ACTIVE })
     end
 
     def user_periods

@@ -13,6 +13,7 @@
   <%= @user.name %> ·
   <%= l(:label_team_planning_period_length, count: @planner.weeks) %> ·
   <%= l(:label_team_planning_running, period: current.label, range: current.range_label) %>
+  <% if @planner.past_period %>· <%= link_to l(:label_team_planning_all_periods), team_planning_periods_path(team_planning_user_param(@user)) %><% end %>
 </p>
 
 <% unless @planner.own? %>
