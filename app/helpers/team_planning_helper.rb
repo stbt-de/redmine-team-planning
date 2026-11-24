@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 module TeamPlanningHelper
-  def format_hours(value)
+  # Eigener Name: der Helfer hängt auch an MyController und darf Redmines
+  # format_hours dort nicht ersetzen (sonst „1:30 h h“ in anderen Blöcken)
+  def team_planning_hours(value)
     "#{format('%g', value.to_f.round(2)).tr('.', ',')} h"
   end
 

@@ -183,6 +183,20 @@ class TeamPlanningIntegrationTest < Redmine::IntegrationTest
     end
   end
 
+  # Regression: TeamPlanningHelper hing an MyController und ersetzte dort
+  # Redmines format_hours (mit eigenem „ h“). Redmines Block „Aufgewendete
+  # Zeit“ und andere Zeit-Blöcke zeigten dadurch „1,5 h h“.
+  def test_meine_seite_behaelt_redmines_stundenformat
+    TimeEntry.create!(project: @project, issue: Issue.find(1), user: @jsmith, author: @jsmith, hours: 1.5,
+                      spent_on: @jsmith.today, activity: TimeEntryActivity.shared.active.first)
+    @jsmith.pref.my_page_layout = { 'top' => %w[team_plan timelog] }
+    @jsmith.pref.save!
+    get '/my/page'
+    assert_response :success
+    assert_select '#block-timelog'
+    assert_no_match(/\d h h\b/, response.body)
+  end
+
   # Reiter: Teamrunde und Abschlüsse waren vorher nur über die Abschluss-Seite erreichbar
   def test_reiter_auf_allen_seiten
     %w[/team_planning /team_planning/team /team_planning/closings /team_planning/periods /team_planning/close].each do |path|

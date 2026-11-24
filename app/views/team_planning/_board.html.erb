@@ -60,7 +60,7 @@
         <strong><%= past.label %></strong>
         <span class="tp-col-sub"><%= l(:label_team_planning_closed) %></span>
         <span class="tp-col-sub tp-num"><%= l(:label_team_planning_done_count, count: past.items.where(result: 'done').count) %></span>
-        <span class="tp-col-sub tp-num"><%= format_hours(planner.booked_hours(past)) %></span>
+        <span class="tp-col-sub tp-num"><%= team_planning_hours(planner.booked_hours(past)) %></span>
       </button>
       <div class="tp-past-body">
         <header class="tp-col-head">
@@ -77,7 +77,7 @@
               <%= team_planning_project_mark(item.issue.project) %>
               <%= link_to item.issue.subject, issue_path(item.issue), class: 'tp-slim-title' %>
               <span class="tp-pill tp-result-<%= item.result %>"><%= team_planning_result_label(item.result) %></span>
-              <span class="tp-slim-h tp-num"><%= format_hours(planner.booked_for(item.issue, past)) %></span>
+              <span class="tp-slim-h tp-num"><%= team_planning_hours(planner.booked_for(item.issue, past)) %></span>
             </div>
           <% end %>
         </div>
@@ -119,9 +119,9 @@
           <% if current %>
             <span><%= l(:label_team_planning_done_count, count: done_count) %></span>
             <% outside = planner.booked_outside(period) %>
-            <span title="<%= l(:text_team_planning_booked_hint, name: user.name, range: period.range_label) %>"><%= l(:label_team_planning_booked, hours: format_hours(planner.booked_hours(period))) %><%= ", #{l(:label_team_planning_outside, hours: format_hours(outside))}" if outside.positive? %></span>
+            <span title="<%= l(:text_team_planning_booked_hint, name: user.name, range: period.range_label) %>"><%= l(:label_team_planning_booked, hours: team_planning_hours(planner.booked_hours(period))) %><%= ", #{l(:label_team_planning_outside, hours: team_planning_hours(outside))}" if outside.positive? %></span>
           <% end %>
-          <% if planned.positive? %><span><%= l(:label_team_planning_planned, hours: format_hours(planned)) %></span><% end %>
+          <% if planned.positive? %><span><%= l(:label_team_planning_planned, hours: team_planning_hours(planned)) %></span><% end %>
           <% hidden = planner.hidden_count(period) %>
           <% if hidden.positive? %><span><%= l(:label_team_planning_hidden, count: hidden) %></span><% end %>
         </div>

@@ -67,7 +67,7 @@
     <% if period.starts_on > today && rows.any? %><p class="tp-hint"><%= l(:text_team_planning_booking_from, date: period.starts_on.strftime('%-d.%-m.')) %></p><% end %>
     <div class="tp-wfoot">
       <div class="tp-meter"><span class="tp-meter-done" style="width: <%= items.any? ? done * 100 / items.size : 0 %>%"></span></div>
-      <span class="tp-num"><%= l(:label_team_planning_done_of, done: done, count: items.size) %> · <%= l(:label_team_planning_booked, hours: format_hours(planner.booked_hours(period))) %></span>
+      <span class="tp-num"><%= l(:label_team_planning_done_of, done: done, count: items.size) %> · <%= l(:label_team_planning_booked, hours: team_planning_hours(planner.booked_hours(period))) %></span>
       <%= link_to l(:button_team_planning_open_board), team_planning_path %>
     </div>
   </div>

@@ -78,7 +78,7 @@
           <span class="tp-state is-<%= entry.state %>"><%= entry.state == :running ? l(:label_team_planning_state_running, period: entry.period.label) : l(:"label_team_planning_state_#{entry.state}") %></span>
         </div>
         <div>
-          <div class="tp-k"><%= l(:label_team_planning_review) %><% if last %> <%= link_to last.label, team_planning_period_path(last.starts_on.iso8601, team_planning_user_param(entry.user)) %><%= " · #{l(:label_team_planning_done_count, count: last.items.where(result: 'done').count)} · #{format_hours(planner.booked_hours(last))}" %><% end %></div>
+          <div class="tp-k"><%= l(:label_team_planning_review) %><% if last %> <%= link_to last.label, team_planning_period_path(last.starts_on.iso8601, team_planning_user_param(entry.user)) %><%= " · #{l(:label_team_planning_done_count, count: last.items.where(result: 'done').count)} · #{team_planning_hours(planner.booked_hours(last))}" %><% end %></div>
           <% if last && (last.review_good.present? || last.review_bad.present?) %>
             <ul>
               <% team_planning_text_lines(last.review_good, 2).each do |line| %><li><%= line %></li><% end %>

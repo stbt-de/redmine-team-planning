@@ -6,7 +6,7 @@
   hours_text = if period && (booked.positive? || item&.planned_hours)
                  "#{format('%g', booked.round(2)).tr('.', ',')}#{" / #{format('%g', item.planned_hours.to_f).tr('.', ',')}" if item&.planned_hours} h"
                elsif item&.planned_hours
-                 l(:label_team_planning_planned, hours: format_hours(item.planned_hours))
+                 l(:label_team_planning_planned, hours: team_planning_hours(item.planned_hours))
                end
 %>
 <% if location == 'standing' %>
@@ -14,7 +14,7 @@
            data-subject="<%= issue.subject.downcase %>" tabindex="0" aria-label="<%= l(:label_team_planning_standing) %>: <%= issue.subject %>">
     <%= team_planning_project_mark(issue.project) %>
     <%= link_to issue.subject, issue_path(issue), class: 'tp-slim-title', draggable: false %>
-    <% if period %><span class="tp-slim-h tp-num"><%= format_hours(booked) %></span><% end %>
+    <% if period %><span class="tp-slim-h tp-num"><%= team_planning_hours(booked) %></span><% end %>
     <button type="button" class="tp-icon-btn tp-menu-btn" data-tp-menu aria-label="<%= l(:label_team_planning_actions, issue: "##{issue.id}") %>">⋯</button>
   </article>
 <% else %>

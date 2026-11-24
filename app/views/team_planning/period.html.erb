@@ -38,7 +38,7 @@
       <div class="tp-stat"><b><%= Array(by_result['done']).size %></b><span><%= l(:label_team_planning_stat_done) %><%= ", #{l(:label_team_planning_stat_unplanned, count: unplanned)}" if unplanned.positive? %></span></div>
       <div class="tp-stat"><b><%= Array(by_result['carried']).size %></b><span><%= l(:label_team_planning_result_carried) %></span></div>
       <div class="tp-stat"><b><%= Array(by_result['backlog']).size + Array(by_result['closed']).size %></b><span><%= l(:label_team_planning_stat_backlog_closed) %></span></div>
-      <div class="tp-stat"><b><%= format_hours(@planner.booked_hours(period)) %></b><span><%= l(:label_team_planning_stat_booked) %></span></div>
+      <div class="tp-stat"><b><%= team_planning_hours(@planner.booked_hours(period)) %></b><span><%= l(:label_team_planning_stat_booked) %></span></div>
     </div>
     <p class="tp-hint"><%= l(:text_team_planning_booked_all, range: period.range_label) %>.</p>
     <div class="tp-list">
@@ -47,7 +47,7 @@
           <%= team_planning_project_mark(item.issue.project) %>
           <span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small>#<%= item.issue.id %> · <%= item.issue.status.name %><%= " · #{l(:label_team_planning_unplanned)}" if item.origin == 'unplanned' %><%= " · #{l(:label_team_planning_long)}" if item.long? %></small></span>
           <% if item.result %><span class="tp-pill tp-result-<%= item.result %>"><%= team_planning_result_label(item.result) %></span><% end %>
-          <span class="tp-num"><%= format_hours(@planner.booked_for(item.issue, period)) %></span>
+          <span class="tp-num"><%= team_planning_hours(@planner.booked_for(item.issue, period)) %></span>
         </div>
       <% end %>
       <% if items.empty? %><p class="tp-hint"><%= l(:text_team_planning_period_empty) %></p><% end %>

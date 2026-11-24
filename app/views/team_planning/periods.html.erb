@@ -20,7 +20,7 @@
       <div class="tp-list-row tp-period-row">
         <span class="tp-t">
           <%= link_to period.label, team_planning_period_path(period.starts_on.iso8601, up), class: 'tp-period-link' %>
-          <small><%= period.range_label %> · <%= l(:label_team_planning_done_count, count: done) %> · <%= format_hours(@planner.booked_hours(period)) %><%= " · #{l(:label_team_planning_focus)}: #{period.focus}" if period.focus.present? %></small>
+          <small><%= period.range_label %> · <%= l(:label_team_planning_done_count, count: done) %> · <%= team_planning_hours(@planner.booked_hours(period)) %><%= " · #{l(:label_team_planning_focus)}: #{period.focus}" if period.focus.present? %></small>
         </span>
         <span class="tp-period-review">
           <% if good %><span><span class="tp-hint"><%= l(:label_team_planning_review_good) %>:</span> <%= good %></span><% end %>

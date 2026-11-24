@@ -31,12 +31,12 @@
           <div class="tp-stat"><b><%= done_items.size %></b><span><%= l(:label_team_planning_stat_done) %><%= ", #{l(:label_team_planning_stat_unplanned, count: unplanned)}" if unplanned.positive? %></span></div>
           <div class="tp-stat"><b><%= automatic.size + standings.size %></b><span><%= l(:label_team_planning_stat_continuing) %></span></div>
           <div class="tp-stat"><b><%= open_items.size %></b><span><%= l(:label_team_planning_stat_to_decide) %></span></div>
-          <div class="tp-stat"><b><%= format_hours(booked) %></b><span><%= l(:label_team_planning_stat_booked) %></span></div>
+          <div class="tp-stat"><b><%= team_planning_hours(booked) %></b><span><%= l(:label_team_planning_stat_booked) %></span></div>
         </div>
-        <p class="tp-hint"><%= l(:text_team_planning_booked_all, range: period.range_label) %><%= ", #{l(:label_team_planning_outside, hours: format_hours(outside))}" if outside.positive? %>.</p>
+        <p class="tp-hint"><%= l(:text_team_planning_booked_all, range: period.range_label) %><%= ", #{l(:label_team_planning_outside, hours: team_planning_hours(outside))}" if outside.positive? %>.</p>
         <div class="tp-list">
           <% done_items.each do |item| %>
-            <div class="tp-list-row"><%= team_planning_project_mark(item.issue.project) %><span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small>#<%= item.issue.id %><%= " · #{l(:label_team_planning_unplanned)}" if item.origin == 'unplanned' %></small></span><span class="tp-num"><%= format_hours(@planner.booked_for(item.issue, period)) %></span></div>
+            <div class="tp-list-row"><%= team_planning_project_mark(item.issue.project) %><span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small>#<%= item.issue.id %><%= " · #{l(:label_team_planning_unplanned)}" if item.origin == 'unplanned' %></small></span><span class="tp-num"><%= team_planning_hours(@planner.booked_for(item.issue, period)) %></span></div>
           <% end %>
           <% if done_items.empty? %><p class="tp-hint"><%= l(:text_team_planning_nothing_done) %></p><% end %>
         </div>
@@ -51,7 +51,7 @@
           <% open_items.each do |item| %>
             <div class="tp-list-row">
               <%= team_planning_project_mark(item.issue.project) %>
-              <span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small>#<%= item.issue.id %> · <%= item.issue.status.name %><%= " · #{l(:label_team_planning_carried_times, count: @planner.carries(item.issue))}" if @planner.carries(item.issue).positive? %> · <%= format_hours(@planner.booked_for(item.issue, period)) %></small></span>
+              <span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small>#<%= item.issue.id %> · <%= item.issue.status.name %><%= " · #{l(:label_team_planning_carried_times, count: @planner.carries(item.issue))}" if @planner.carries(item.issue).positive? %> · <%= team_planning_hours(@planner.booked_for(item.issue, period)) %></small></span>
               <span class="tp-seg" role="radiogroup" aria-label="<%= l(:label_team_planning_decision_for, issue: "##{item.issue.id}") %>">
                 <% { 'next' => next_period.label, 'backlog' => l(:label_team_planning_backlog), 'close' => l(:button_close) }.each do |value, label| %>
                   <label><input type="radio" name="decisions[<%= item.issue.id %>]" value="<%= value %>" required<%= ' checked' if params.dig(:decisions, item.issue.id.to_s) == value %>><span><%= label %></span></label>
@@ -67,12 +67,12 @@
             <% standings.each do |standing| %>
               <div class="tp-list-row">
                 <%= team_planning_project_mark(standing.issue.project) %>
-                <span class="tp-t"><%= link_to standing.issue.subject, issue_path(standing.issue) %><small><%= l(:label_team_planning_standing) %> · <%= format_hours(@planner.booked_for(standing.issue, period)) %></small></span>
+                <span class="tp-t"><%= link_to standing.issue.subject, issue_path(standing.issue) %><small><%= l(:label_team_planning_standing) %> · <%= team_planning_hours(@planner.booked_for(standing.issue, period)) %></small></span>
                 <label class="tp-check-label"><input type="checkbox" name="end_standing[]" value="<%= standing.issue_id %>"> <%= l(:label_team_planning_end_standing_short) %></label>
               </div>
             <% end %>
             <% automatic.each do |item| %>
-              <div class="tp-list-row"><%= team_planning_project_mark(item.issue.project) %><span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small><%= item.until_on ? l(:label_team_planning_long_until, week: item.until_on.cweek) : l(:label_team_planning_long) %> · <%= format_hours(@planner.booked_for(item.issue, period)) %></small></span></div>
+              <div class="tp-list-row"><%= team_planning_project_mark(item.issue.project) %><span class="tp-t"><%= link_to item.issue.subject, issue_path(item.issue) %><small><%= item.until_on ? l(:label_team_planning_long_until, week: item.until_on.cweek) : l(:label_team_planning_long) %> · <%= team_planning_hours(@planner.booked_for(item.issue, period)) %></small></span></div>
             <% end %>
           </div>
         <% end %>
@@ -109,7 +109,7 @@
   <div class="tp-panel-head"><h3><%= l(:label_team_planning_earlier_reviews) %></h3><% if history.any? %><%= link_to l(:label_team_planning_all_periods), team_planning_periods_path(team_planning_user_param(@user)) %><% end %></div>
   <% history.each_with_index do |past, index| %>
     <details class="tp-review"<%= ' open' if index.zero? %>>
-      <summary><%= past.label %> · <%= l(:label_team_planning_done_count, count: past.items.where(result: 'done').count) %> · <%= format_hours(@planner.booked_hours(past)) %></summary>
+      <summary><%= past.label %> · <%= l(:label_team_planning_done_count, count: past.items.where(result: 'done').count) %> · <%= team_planning_hours(@planner.booked_hours(past)) %></summary>
       <div class="tp-review-cols">
         <% { review_good: :label_team_planning_review_good, review_bad: :label_team_planning_review_bad, review_change: :label_team_planning_review_change }.each do |field, label| %>
           <div><h4><%= l(label) %></h4><%= team_planning_text(past.send(field)) %></div>
