@@ -143,6 +143,12 @@ const log = (...a) => console.log(...a);
   log('12b toolbar bold saved:', JSON.stringify(notesAfter));
   expect(notesAfter.startsWith('**E2E**'), 'Fett über die Werkzeugleiste wurde nicht gespeichert: ' + notesAfter);
   await p.screenshot({ path: S + '/e2e-team.png', fullPage: true });
+  // Regression: unter „Zu besprechen“ stand „nichts Auffälliges“ als <p> mit Theme-Abstand –
+  // der Inhalt begann tiefer als in den anderen Spalten der Karte
+  const contentTops = await p.locator('.tp-person').first().evaluate((card) => [...card.children].slice(1)
+    .map((col) => col.querySelector('.tp-k + *')?.getBoundingClientRect().top).filter((top) => top !== undefined));
+  log('12c person columns content top:', contentTops.map(Math.round));
+  expect(Math.max(...contentTops) - Math.min(...contentTops) <= 2, 'Spalten der Teamkarte beginnen unterschiedlich hoch: ' + contentTops);
   await p.goto(base + '/team_planning/team?mode=project'); log('12 projects:', await p.locator('.tp-panel h3').count());
   // Meine Seite
   await p.goto(base + '/my/page');

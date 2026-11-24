@@ -173,7 +173,7 @@ en:
   text_team_planning_notes_hint: "visible to everyone, saves immediately"
   text_team_planning_notes_placeholder: "Topics for everyone, agreements, decisions. One point per line, formatting as in issues."
   text_team_planning_saved: "saved"
-  text_team_planning_nothing_special: "nothing special"
+  text_team_planning_nothing_special: "Nothing stands out"
   text_team_planning_no_members: "Nobody plans with Team Planning yet. Grant the permission \"Team Planning: own planning\" in a role."
   text_team_planning_reminder_eve16: "The day before at 4 pm"
   text_team_planning_reminder_eve9: "The day before at 9 am"

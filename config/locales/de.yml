@@ -164,7 +164,7 @@ de:
   label_team_planning_standing_count:
     one: "1 Dauerthema"
     other: "%{count} Dauerthemen"
-  label_team_planning_to_discuss: "Ansprechen"
+  label_team_planning_to_discuss: "Zu besprechen"
   label_team_planning_stuck:
     one: "1 Ticket 3× übertragen"
     other: "%{count} Tickets 3× übertragen"
@@ -176,7 +176,7 @@ de:
   text_team_planning_notes_hint: "für alle sichtbar, speichert sofort"
   text_team_planning_notes_placeholder: "Themen für alle, Absprachen, Entscheidungen. Ein Punkt pro Zeile, Formatierung wie in Tickets."
   text_team_planning_saved: "gespeichert"
-  text_team_planning_nothing_special: "nichts Besonderes"
+  text_team_planning_nothing_special: "Nichts Auffälliges"
   text_team_planning_no_members: "Noch niemand plant mit Team Planning. Vergib das Recht „Team Planning: eigene Planung“ in einer Rolle."
   text_team_planning_reminder_eve16: "Am Vortag um 16 Uhr"
   text_team_planning_reminder_eve9: "Am Vortag um 9 Uhr"
