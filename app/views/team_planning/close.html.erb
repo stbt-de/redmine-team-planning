@@ -9,6 +9,7 @@
 <% unplanned = items.count { |i| i.origin == 'unplanned' && @planner.done?(i) } %>
 <% booked = @planner.booked_hours(period) %>
 <% outside = @planner.booked_outside(period) %>
+<%= render 'tabs', current: :board %>
 
 <div class="contextual tp-tools">
   <%= team_planning_person_select(@user, controller: 'team_planning', action: 'close') %>

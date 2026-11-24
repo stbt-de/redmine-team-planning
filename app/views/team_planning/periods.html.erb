@@ -1,6 +1,7 @@
 <%# Alle abgeschlossenen Zeiträume einer Person, neueste zuerst %>
 <% up = team_planning_user_param(@user) %>
 <% html_title "#{l(:label_team_planning_all_periods)} · #{@user.name}" %>
+<%= render 'tabs', current: :board %>
 
 <div class="contextual tp-tools">
   <%= team_planning_person_select(@user, controller: 'team_planning', action: 'periods') %>

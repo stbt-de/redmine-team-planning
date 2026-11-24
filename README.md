@@ -33,12 +33,19 @@ with Redmine's permissions and workflows.
   a period's page: summary, every issue with its result and hours, the focus, the review
   (went well, less well, what we change), personal notes and the notes of the team meetings
   held in that period – all editable afterwards by the owner or a project lead. *Earlier periods* lists them all with the first lines of each review.
+- **Closings** – who has closed their period: for each week, everyone with *closed on …*
+  (linking to the period's review), *not closed yet*, *behind since KW 46* or *runs until
+  KW 49* for longer periods. Those who still have to close come first. Opens on the week
+  before the next team meeting; ‹ › steps through other weeks.
 - **Team meeting** – all plans by person or by project (customer), with who is prepared,
   the last review, focus, load and what to talk about; meeting notes for topics that
   belong to nobody; an email reminder the day before to everyone not prepared yet.
 - **My page block "Planning"** – the issues of the period with a tick box and quick time
   logging (+0.5, +1, +2 or a number and Enter; comment, activity and day on demand).
   Step back to the previous period to log time late.
+
+*Planning*, *Team meeting* and *Closings* are tabs at the top of every page (the latter two
+for everyone who plans themselves).
 
 Everything you change shows a message with *Undo*. Others' plans are read-only unless your
 role may edit them (e.g. project lead); the owner gets an email about the change.
@@ -197,9 +204,9 @@ Back up the database before, as with every bulk change.
 - Everyone opens *Planning*, sets the period length and limit (*Settings* on the board;
   one week and six issues is a good start), drags recurring work into *Ongoing topics*
   and plans the first period.
-- Before the team meeting everyone closes their period (*Close KW 48* on the board) – that
-  is what marks them as prepared.
-- In the meeting, open *Planning → Team meeting*: go through the people, or switch to
+- Before the team meeting everyone closes their own period (*Close KW 48* on the board) –
+  that is what marks them as prepared. The *Closings* tab shows who has done it so far.
+- In the meeting, open the *Team meeting* tab: go through the people, or switch to
   *By project*; notes that belong to nobody go into the meeting notes.
 
 ## Development

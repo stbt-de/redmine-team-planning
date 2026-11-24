@@ -1,0 +1,39 @@
+<%# Abschlüsse einer Woche: wer seinen Zeitraum abgeschlossen hat %>
+<% overview = @overview %>
+<% html_title "#{l(:label_team_planning_closings)} · #{overview.label}" %>
+<%= render 'tabs', current: :closings %>
+
+<div class="contextual tp-tools">
+  <span class="tp-seg" role="group" aria-label="<%= l(:label_team_planning_closings) %>">
+    <%= link_to "‹ KW #{overview.previous_week.cweek}", team_planning_closings_path(week: overview.previous_week.iso8601), class: 'tp-btn', 'aria-label': l(:label_team_planning_previous_week) %>
+    <%= link_to "KW #{overview.next_week.cweek} ›", team_planning_closings_path(week: overview.next_week.iso8601), class: 'tp-btn', 'aria-label': l(:label_team_planning_next_week) %>
+  </span>
+  <% unless overview.default? %><%= link_to l(:label_team_planning_closings_due_week), team_planning_closings_path, class: 'tp-btn' %><% end %>
+</div>
+
+<h2><%= l(:label_team_planning_closings) %> · <%= overview.label %></h2>
+<p class="tp-sub">
+  <%= overview.range_label %> ·
+  <%= l(:text_team_planning_closings_count, closed: overview.closed_count, count: overview.due_count) %>
+</p>
+
+<section class="tp-panel">
+  <div class="tp-list tp-closings">
+    <% overview.entries.each do |entry| %>
+      <% period = entry.period %>
+      <% up = team_planning_user_param(entry.user) %>
+      <div class="tp-list-row tp-closing-row">
+        <span class="tp-t">
+          <%= link_to entry.user.name, team_planning_path(up) %>
+          <% if period %><small><%= period.label %> · <%= period.range_label %></small><% end %>
+        </span>
+        <span class="tp-state is-<%= entry.state %>"><%= team_planning_closing_state(entry, overview) %></span>
+        <% if entry.state == :closed %>
+          <%= link_to l(:button_team_planning_period_details), team_planning_period_path(period.starts_on.iso8601, up), class: 'tp-link-btn' %>
+        <% end %>
+      </div>
+    <% end %>
+    <% if overview.entries.empty? %><p class="tp-hint"><%= l(:text_team_planning_closings_empty) %></p><% end %>
+  </div>
+</section>
+<p class="tp-hint"><%= l(:text_team_planning_closings_hint) %></p>

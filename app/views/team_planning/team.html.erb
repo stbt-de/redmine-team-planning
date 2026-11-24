@@ -1,6 +1,7 @@
 <% html_title l(:label_team_planning_round) %>
 <% round = @team_round %>
 <% settings = RedmineTeamPlanning::Settings %>
+<%= render 'tabs', current: :team %>
 <div class="contextual tp-tools">
   <span class="tp-seg" role="group" aria-label="<%= l(:label_team_planning_grouping) %>">
     <%= link_to l(:label_team_planning_by_person), team_planning_team_path, 'aria-pressed': @mode == 'person' %>

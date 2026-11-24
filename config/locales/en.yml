@@ -1,6 +1,9 @@
 en:
+  # Name des Blocks in der Auswahl auf „Meine Seite“
+  my:
+    blocks:
+      team_plan: "Planning"
   label_team_planning: "Planning"
-  label_team_plan: "Planning"
   label_team_planning_widget: "Planning"
   permission_use_team_planning: "Team Planning: own planning"
   permission_view_others_team_planning: "Team Planning: view others' planning"
@@ -138,6 +141,19 @@ en:
   label_team_planning_open_count:
     one: "1 open"
     other: "%{count} open"
+  # Tabs and closings
+  label_team_planning_tab_board: "Planning"
+  label_team_planning_closings: "Closings"
+  label_team_planning_previous_week: "Previous week"
+  label_team_planning_next_week: "Next week"
+  label_team_planning_closings_due_week: "Week before the meeting"
+  label_team_planning_closing_open: "Not closed yet"
+  label_team_planning_closing_behind: "%{period} not closed yet"
+  label_team_planning_closing_running: "Runs until %{week}"
+  label_team_planning_closing_none: "No period planned"
+  text_team_planning_closings_count: "%{closed} of %{count} closed"
+  text_team_planning_closings_empty: "Nobody on the team plans with Team Planning."
+  text_team_planning_closings_hint: "Everyone closes their own period on the board via “Close”. If the reminder is enabled, anyone behind gets an email before the team meeting."
   label_team_planning_state_prepared: "Prepared"
   label_team_planning_state_open: "Not prepared yet"
   label_team_planning_state_running: "%{period} continues"

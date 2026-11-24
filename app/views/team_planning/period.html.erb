@@ -8,6 +8,7 @@
 <% older = @planner.older_closed_period(period) %>
 <% newer = @planner.newer_closed_period(period) %>
 <% html_title "#{period.label} · #{@user.name}" %>
+<%= render 'tabs', current: :board %>
 
 <div class="contextual tp-tools">
   <span class="tp-seg" role="group" aria-label="<%= l(:label_team_planning_periods) %>">

@@ -3,9 +3,9 @@
 # Board, Abschluss und Teamrunde
 class TeamPlanningController < ApplicationController
   before_action :require_login
-  before_action :find_user, except: %i[team update_round]
-  before_action :authorize_view, except: %i[team update_round]
-  before_action :authorize_use, only: %i[team update_round]
+  before_action :find_user, except: %i[team update_round closings]
+  before_action :authorize_view, except: %i[team update_round closings]
+  before_action :authorize_use, only: %i[team update_round closings]
 
   helper :team_planning
   include TeamPlanningHelper
@@ -75,6 +75,12 @@ class TeamPlanningController < ApplicationController
   def team
     @team_round = RedmineTeamPlanning::TeamRound.new
     @mode = params[:mode] == 'project' ? 'project' : 'person'
+  end
+
+  # Wer hat seinen Zeitraum abgeschlossen? (?week=YYYY-MM-DD, sonst die
+  # Woche vor der nächsten Teamrunde)
+  def closings
+    @overview = RedmineTeamPlanning::ClosingOverview.new(User.current, week: params[:week])
   end
 
   def update_round

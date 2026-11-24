@@ -243,6 +243,14 @@ details.tp-review[open] summary { margin-bottom: 12px; }
 .tp-state { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-top: 6px; background: var(--tp-muted); color: var(--tp-text-3); }
 .tp-state.is-prepared { background: var(--tp-ok-bg); color: var(--tp-ok-text); }
 .tp-state.is-open { background: var(--tp-warn-bg); color: var(--tp-warn-text); }
+.tp-state.is-closed { background: var(--tp-ok-bg); color: var(--tp-ok-text); }
+
+/* Reiter oben: Planung, Teamrunde, Abschlüsse */
+.tp-tabs { margin: 0 0 14px; }
+
+/* Abschlüsse: Name links, Stand und Details rechts */
+.tp-closing-row .tp-state { margin-top: 0; }
+.tp-closing-row .tp-t a { font-weight: 600; }
 .tp-focus { font-weight: 500; margin-bottom: 8px; }
 .tp-person .tp-meter { margin-bottom: 6px; }
 

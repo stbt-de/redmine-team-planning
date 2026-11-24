@@ -172,6 +172,53 @@ class TeamPlanningIntegrationTest < Redmine::IntegrationTest
     assert_select '#block-team_plan .tp-wbook button[data-hours]', 3
   end
 
+  # Regression: Redmine sucht den Namen des Blocks unter my.blocks.team_plan.
+  # Ohne diesen Schlüssel stand in der Auswahl „Team plan“ statt „Planung“.
+  def test_block_heisst_in_der_auswahl_planung
+    with_settings default_language: 'de' do
+      @jsmith.update!(language: 'de')
+      get '/my/page'
+      assert_response :success
+      assert_select 'select#block-select option[value=team_plan]', text: 'Planung'
+    end
+  end
+
+  # Reiter: Teamrunde und Abschlüsse waren vorher nur über die Abschluss-Seite erreichbar
+  def test_reiter_auf_allen_seiten
+    %w[/team_planning /team_planning/team /team_planning/closings /team_planning/periods /team_planning/close].each do |path|
+      get path
+      assert_response :success, path
+      assert_select 'nav.tp-tabs a', 3
+      assert_select 'nav.tp-tabs a[href=?]', '/team_planning/closings', text: 'Abschlüsse'
+      assert_select 'nav.tp-tabs a[href=?]', '/team_planning/team', text: 'Teamrunde'
+    end
+    get '/team_planning/team'
+    assert_select 'nav.tp-tabs a.selected', text: 'Teamrunde'
+  end
+
+  def test_abschluesse_zeigen_stand_je_person
+    planner_for(@jsmith).current_period
+    RedmineTeamPlanning::Closing.new(planner_for(@jsmith)).call(decisions: {})
+    planner_for(@dlopper).current_period
+    get '/team_planning/closings'
+    assert_response :success
+    assert_select 'h2', text: /Abschlüsse · KW 48/
+    assert_select '.tp-closing-row', text: /#{@jsmith.name}.*abgeschlossen am/m
+    assert_select '.tp-closing-row a[href=?]', "/team_planning/periods/#{MONDAY.iso8601}", text: 'Details und Rückblick'
+    assert_select '.tp-closing-row .tp-state.is-open', minimum: 1
+    assert_select '.tp-sub', text: /1 von \d+ abgeschlossen/
+
+    get '/team_planning/closings', params: { week: (MONDAY - 7).iso8601 }
+    assert_select 'h2', text: /KW 47/
+    assert_select 'a.tp-btn', text: 'Woche vor der Teamrunde'
+  end
+
+  def test_abschluesse_nur_fuer_planende
+    Role.find_each { |role| role.remove_permission!(:use_team_planning) }
+    get '/team_planning/closings'
+    assert_response :forbidden
+  end
+
   def test_einstellungen_speichern
     log_in_as('admin', 'admin')
     get '/settings/plugin/redmine_team_planning'

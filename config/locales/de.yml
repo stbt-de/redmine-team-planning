@@ -1,6 +1,9 @@
 de:
+  # Name des Blocks in der Auswahl auf „Meine Seite“
+  my:
+    blocks:
+      team_plan: "Planung"
   label_team_planning: "Planung"
-  label_team_plan: "Planung"
   label_team_planning_widget: "Planung"
   permission_use_team_planning: "Team Planning: eigene Planung"
   permission_view_others_team_planning: "Team Planning: Planung anderer ansehen"
@@ -141,6 +144,19 @@ de:
   label_team_planning_open_count:
     one: "1 offen"
     other: "%{count} offen"
+  # Reiter und Abschlüsse
+  label_team_planning_tab_board: "Planung"
+  label_team_planning_closings: "Abschlüsse"
+  label_team_planning_previous_week: "Vorige Woche"
+  label_team_planning_next_week: "Nächste Woche"
+  label_team_planning_closings_due_week: "Woche vor der Teamrunde"
+  label_team_planning_closing_open: "Noch nicht abgeschlossen"
+  label_team_planning_closing_behind: "%{period} noch nicht abgeschlossen"
+  label_team_planning_closing_running: "Läuft bis %{week}"
+  label_team_planning_closing_none: "Kein Zeitraum geplant"
+  text_team_planning_closings_count: "%{closed} von %{count} abgeschlossen"
+  text_team_planning_closings_empty: "Niemand im Team plant mit Team Planning."
+  text_team_planning_closings_hint: "Jede Person schließt ihren Zeitraum selbst ab: auf dem Board über „Abschließen“. Wer zurückliegt, bekommt vor der Teamrunde eine Erinnerung, wenn sie eingeschaltet ist."
   label_team_planning_state_prepared: "Vorbereitet"
   label_team_planning_state_open: "Noch nicht vorbereitet"
   label_team_planning_state_running: "%{period} läuft weiter"

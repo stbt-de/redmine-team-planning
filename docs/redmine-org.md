@@ -19,6 +19,7 @@ Plan in periods, review, and meet as a team – a board in Redmine instead of a 
 * *Ongoing topics and long-running issues* – recurring work runs along every week without counting against the limit; long-running issues move on without asking. Absence lowers the limit.
 * *Ticking off with completion actions* – e.g. _Invoice_: status _For Billing_, assigned to whoever has the role _Billing_ in the project, with a comment "Done in week 48, 3.5 h logged". Respects the workflow; undo restores status and assignee.
 * *Closing a period* – summary, one decision per open issue (next period, backlog, close), a short review and the focus for the next period.
+* *Closings* – who has closed their period this week, who is behind, whose longer period runs on.
 * *Team meeting* – all plans by person or by project, meeting notes, an email reminder for everyone not prepared yet.
 * *My page block "Planning"* – tick off and log time (+0.5, +1, +2 or any number) without opening the board.
 * Permissions for own planning, viewing and editing others' plans; one rake task takes over a "planning week" list field.
@@ -54,7 +55,7 @@ Restart Redmine. Then grant the permissions (_Administration → Roles and permi
 
 ## Plugin version
 
-0.1.2
+0.1.3
 
 ## Redmine compatibility
 

@@ -1,5 +1,6 @@
 <% html_title l(:label_team_planning) %>
 <% current = @planner.current_period %>
+<%= render 'tabs', current: :board %>
 <div class="contextual tp-tools">
   <%= team_planning_person_select(@user, controller: 'team_planning', action: 'show') %>
   <% if @planner.editable? %>

@@ -65,6 +65,22 @@ module TeamPlanningHelper
         .strip
   end
 
+  # Stand einer Person in den Abschlüssen (ClosingOverview::Entry)
+  def team_planning_closing_state(entry, overview)
+    period = entry.period
+    case entry.state
+    when :closed then l(:text_team_planning_closed_on, date: format_date(period.closed_at))
+    when :running then l(:label_team_planning_closing_running, week: "KW #{period.ends_on.cweek}")
+    when :open
+      if period.ends_on < overview.week_start
+        l(:label_team_planning_closing_behind, period: period.label)
+      else
+        l(:label_team_planning_closing_open)
+      end
+    else l(:label_team_planning_closing_none)
+    end
+  end
+
   def team_planning_people_count(count)
     count == 1 ? l(:label_team_planning_day_one) : l(:label_team_planning_days, count: count)
   end

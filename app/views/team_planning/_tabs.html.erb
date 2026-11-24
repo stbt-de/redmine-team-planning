@@ -1,0 +1,15 @@
+<%# Reiter oben auf allen Seiten: Planung (Board und Unterseiten), Teamrunde,
+    Abschlüsse. Teamrunde und Abschlüsse nur für alle, die selbst planen. %>
+<% current = local_assigns[:current] %>
+<% tabs = [[:board, l(:label_team_planning_tab_board), team_planning_path]] %>
+<% if RedmineTeamPlanning::Access.use?(User.current) %>
+  <% tabs << [:team, l(:label_team_planning_round), team_planning_team_path] %>
+  <% tabs << [:closings, l(:label_team_planning_closings), team_planning_closings_path] %>
+<% end %>
+<nav class="tabs tp-tabs" aria-label="<%= l(:label_team_planning) %>">
+  <ul>
+    <% tabs.each do |key, label, path| %>
+      <li><%= link_to label, path, class: ('selected' if key == current), 'aria-current': ('page' if key == current) %></li>
+    <% end %>
+  </ul>
+</nav>

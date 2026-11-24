@@ -8,6 +8,7 @@ get 'team_planning', to: 'team_planning#show', as: 'team_planning'
 get 'team_planning/close', to: 'team_planning#close', as: 'team_planning_close'
 post 'team_planning/close', to: 'team_planning#close_period'
 get 'team_planning/team', to: 'team_planning#team', as: 'team_planning_team'
+get 'team_planning/closings', to: 'team_planning#closings', as: 'team_planning_closings'
 get 'team_planning/periods', to: 'team_planning#periods', as: 'team_planning_periods'
 get 'team_planning/periods/:starts_on', to: 'team_planning#period', as: 'team_planning_period',
                                         constraints: { starts_on: /\d{4}-\d{2}-\d{2}/ }
